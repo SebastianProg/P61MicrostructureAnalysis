@@ -8,12 +8,13 @@ import FileHandling.specificFileHandling as sfh
 import Plotting.specificPlotting as spl
 
 # test hkl generator and energy calculation of material
+gf.init()
 phase = 'bcc'
 aVal = 0.28665
-tth = 10
+tth = 7
 energyRange = [5, 300]
 hklData = dc.hklGenerator(phase, aVal, tth, energyRange)
-print(hklData[0:6, :])
+print(hklData[0:16, :])
 
 # peak positions of LaB6
 a0ValLab6 = 0.41569
@@ -27,7 +28,7 @@ for i in range(len(hklValsLab6)):
 	print('%d\t%.3f\t%.3f' % (hklValsLab6[i], energiesDet2[i], energiesDet1[i]))
 dc.calc3Gamma2(hklValsLab6)
 
-# second version can be also applied to first test files (modified header) using new functions working with dictionaries
+# define settings and import the data files
 # plotResMwl = False
 # plotResUvp = False
 plotResMwl = True
