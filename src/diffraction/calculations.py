@@ -2,17 +2,17 @@ import math
 import numpy as np
 import scipy.optimize as op
 
-import BasicFunctions.generalFunctions as gf
-import BasicFunctions.generalCalculations as gc
-import BasicFunctions.dataModels as dm
-import Diffraction.conversions as conv
+import basics.functions as bf
+import basics.calculations as bc
+import basics.datamodels as dm
+import diffraction.conversions as conv
 
 
 # calculate tau specifying psi and eta (equation of scattering vector-method)
 def calcTauPsiEta(mu, tth, psi, eta):
 	th = tth / 2
-	return (gc.sind(th) ** 2 - gc.sind(psi) ** 2 + gc.cosd(th) ** 2 * gc.sind(psi) ** 2 * gc.sind(eta) ** 2) / \
-		(2 * mu * gc.sind(th) * gc.cosd(psi))
+	return (bc.sind(th) ** 2 - bc.sind(psi) ** 2 + bc.cosd(th) ** 2 * bc.sind(psi) ** 2 * bc.sind(eta) ** 2) / \
+		   (2 * mu * bc.sind(th) * bc.cosd(psi))
 
 
 def calc3Gamma(h, k, l):
@@ -26,8 +26,8 @@ def calc3Gamma2(hkl):
 
 def calcEtaTau(mu, tau, tth, psi):
 	th = tth / 2
-	return gc.asind(2 * mu * tau * gc.sind(th) * gc.cosd(psi) - gc.sind(th) ** 2 + gc.sind(psi) ** 2) ** 0.5 / \
-		(gc.cosd(th) * gc.sind(psi))
+	return bc.asind(2 * mu * tau * bc.sind(th) * bc.cosd(psi) - bc.sind(th) ** 2 + bc.sind(psi) ** 2) ** 0.5 / \
+		   (bc.cosd(th) * bc.sind(psi))
 
 
 def calcEtaMin(tth, psi):
@@ -35,11 +35,11 @@ def calcEtaMin(tth, psi):
 	#	if psi <= th:
 	#		etaMin = 0
 	#	else:
-	#		etaMin = asind((sind(psi)**2 - sind(th)**2)**0.5 / (gc.cosd(th) * sind(psi)))
+	#		etaMin = asind((sind(psi)**2 - sind(th)**2)**0.5 / (bc.cosd(th) * sind(psi)))
 	if psi == 0:
 		return 0
 	else:
-		return gc.asind((max(0, gc.sind(psi) ** 2 - gc.sind(th) ** 2)) ** 0.5 / (gc.cosd(th) * gc.sind(psi)))
+		return bc.asind((max(0, bc.sind(psi) ** 2 - bc.sind(th) ** 2)) ** 0.5 / (bc.cosd(th) * bc.sind(psi)))
 
 
 # calculate min and max tau for given psi value
@@ -48,8 +48,8 @@ def calcValidTauRange(mu, tth, psi):
 	etaMin = calcEtaMin(tth, psi)
 	tauMin = calcTauPsiEta(mu, tth, psi, etaMin)
 	# Psi mode
-	tauMax = (gc.sind(th) ** 2 - gc.sind(psi) ** 2 + gc.cosd(th) ** 2 * gc.sind(psi) ** 2) / \
-		(2 * mu * gc.sind(th) * gc.cosd(psi))
+	tauMax = (bc.sind(th) ** 2 - bc.sind(psi) ** 2 + bc.cosd(th) ** 2 * bc.sind(psi) ** 2) / \
+			 (2 * mu * bc.sind(th) * bc.cosd(psi))
 	return etaMin, tauMax
 
 
@@ -61,17 +61,17 @@ def calcTauRange(mu, tth, psi, etaMin):
 		tauMin = None  # NaN heißt nichts?
 	else:
 		# Omega mode
-		tauMin = (gc.sind(th) ** 2 - gc.sind(psi) ** 2 + gc.cosd(th) ** 2 * gc.sind(psi) ** 2) / \
-			(2 * mu * gc.sind(th) * gc.cosd(psi))
+		tauMin = (bc.sind(th) ** 2 - bc.sind(psi) ** 2 + bc.cosd(th) ** 2 * bc.sind(psi) ** 2) / \
+				 (2 * mu * bc.sind(th) * bc.cosd(psi))
 	# Psi mode
-	tauMax = (gc.sind(th) ** 2 - gc.sind(psi) ** 2 + gc.cosd(th) ** 2 * gc.sind(psi) ** 2) / \
-		(2 * mu * gc.sind(th) * gc.cosd(psi))
+	tauMax = (bc.sind(th) ** 2 - bc.sind(psi) ** 2 + bc.cosd(th) ** 2 * bc.sind(psi) ** 2) / \
+			 (2 * mu * bc.sind(th) * bc.cosd(psi))
 	return tauMin, tauMax
 
 
 # calculate tau specifying alpha and beta (general equation)
 def calcTauAlphaBeta(mu, alpha, beta):
-	return gc.sind(alpha) * gc.sind(beta) / (mu * (gc.sind(alpha) + gc.sind(beta)))
+	return bc.sind(alpha) * bc.sind(beta) / (mu * (bc.sind(alpha) + bc.sind(beta)))
 
 
 def calcSigma33(d, d0, s1, hs2):
@@ -81,11 +81,11 @@ def calcSigma33(d, d0, s1, hs2):
 def calcMue(energy, material):
 	# energy in keV
 	# mue in 1/um
-	mue = np.zeros(gf.size(energy))
-	if gf.size(material, 0) > 1:
+	mue = np.zeros(bf.size(energy))
+	if bf.size(material, 0) > 1:
 		# matrix of absorption data
-		mue = gf.ones(gf.size(energy)) * np.nan
-		for i in range(gf.size(material, 0)):
+		mue = bf.ones(bf.size(energy)) * np.nan
+		for i in range(bf.size(material, 0)):
 			mue[energy >= material[i, 0] & energy < material[i, 1]] = material[i, 2] * energy[energy >= material[i, 0] &
 				energy < material[i, 1]] ** material[i, 3] / 10000
 	else:
@@ -99,7 +99,7 @@ def calcMue(energy, material):
 			mue[energy >= 8.3328] = 929809 * energy[energy >= 8.3328] ** -2.708 / 10000 # in um
 		else:
 			mue = 10 ** 6
-	if gf.size(mue,0) < gf.size(mue,1):
+	if bf.size(mue,0) < bf.size(mue,1):
 		mue = np.transpose(mue)
 	return mue
 
@@ -113,58 +113,58 @@ def calcF33_2(dek):
 
 
 def s33FreeOrientation(s1, hs2, dPsi0, d0, dStar, dPlus):
-	return gc.asind((dPsi0 - d0) * calcF33(s1, hs2) / hs2 * (dStar - dPlus)) ** 0.5
+	return bc.asind((dPsi0 - d0) * calcF33(s1, hs2) / hs2 * (dStar - dPlus)) ** 0.5
 
 
 def s11s22FreeOrientation(s1, hs2):
-	return gc.asind(-2 * s1 / hs2) ** 0.5
+	return bc.asind(-2 * s1 / hs2) ** 0.5
 
 
 def latticeSpacings(spacings, angles, h, k, l):
 	# check if single values are arrays or not
-	if gf.length(spacings) == 1:
-		if len(gf.size(spacings)) > 0:
+	if bf.length(spacings) == 1:
+		if len(bf.size(spacings)) > 0:
 			spacing = spacings[0]
 		else:
 			spacing = spacings
-	if gf.length(angles) == 1:
-		if len(gf.size(angles)) > 0:
+	if bf.length(angles) == 1:
+		if len(bf.size(angles)) > 0:
 			angle = angles[0]
 		else:
 			angle = angles
 	# determine lattice spacings
-	if gf.length(spacings) == 1 and gf.length(angles) == 1 and angle == 90:
+	if bf.length(spacings) == 1 and bf.length(angles) == 1 and angle == 90:
 		# cubic
 		dVals = conv.aVals2latticeDists(spacing, h, k, l)
-	elif gf.length(spacings) == 1 and gf.length(angles) == 1 and angle != 90:
+	elif bf.length(spacings) == 1 and bf.length(angles) == 1 and angle != 90:
 		# rhomboedric
-		dVals = (spacing ** 2 * (1 - 3 * gc.cosd(angle) ** 2 + 2 * gc.cosd(angle) ** 3) / ((h ** 2 + k ** 2 + l ** 2) *
-			gc.sind(angle) ** 2 + 2 * (h * k + k * l + h * l) * (gc.cosd(angle) ** 2 - gc.cosd(angle)))) ** 0.5
-	elif gf.length(spacings) == 2 and gf.length(angles) == 1 and angle == 90:
+		dVals = (spacing ** 2 * (1 - 3 * bc.cosd(angle) ** 2 + 2 * bc.cosd(angle) ** 3) / ((h ** 2 + k ** 2 + l ** 2) *
+																						   bc.sind(angle) ** 2 + 2 * (h * k + k * l + h * l) * (bc.cosd(angle) ** 2 - bc.cosd(angle)))) ** 0.5
+	elif bf.length(spacings) == 2 and bf.length(angles) == 1 and angle == 90:
 		# tetragonal
 		#dVals = spacings[0] / (h ** 2 + k ** 2 + l ** 2 * (spacings[0] ** 2 / spacings[1] ** 2)) ** 0.5
 		dVals = 1 / ((h ** 2 + k ** 2) / spacings[0] ** 2 + l ** 2 / spacings[1] ** 2) ** 0.5
-	elif gf.length(spacings) == 2 and gf.length(angles) == 2 and angles[0] == 90 and angles[1] == 120:
+	elif bf.length(spacings) == 2 and bf.length(angles) == 2 and angles[0] == 90 and angles[1] == 120:
 		# hexagonal
 		dVals = spacings[0] / (4 / 3 * (h ** 2 + h * k + k ** 2) + l ** 2 * spacings[0] ** 2 / spacings[1] ** 2) ** 0.5
-	elif gf.length(spacings) == 3 and gf.length(angles) == 1 and angle == 90:
+	elif bf.length(spacings) == 3 and bf.length(angles) == 1 and angle == 90:
 		# orthorhombic
 		dVals = 1 / ((h / spacings[0]) ** 2 + (k / spacings[1]) ** 2 + (l / spacings[2]) ** 2) ** 0.5
-	elif gf.length(spacings) == 3 and gf.length(angles) == 2 and angles[0] == 90:  # and angles[1] != 90
+	elif bf.length(spacings) == 3 and bf.length(angles) == 2 and angles[0] == 90:  # and angles[1] != 90
 		# monoklin
-		dVals = 1 / (h ** 2 / (spacings[0] ** 2 * gc.sind(angles[1]) ** 2) + k ** 2 / spacings[1] ** 2 + l ** 2 /
-			(spacings[2] ** 2 * gc.sind(angles[1]) ** 2) - 2 * h * l * gc.cosd(angles[1]) / (spacings[0] * spacings[2] *
-			gc.sind(angles[1]) ** 2)) ** 0.5
-	elif gf.length(spacings) == 3 and gf.length(angles) == 3:
+		dVals = 1 / (h ** 2 / (spacings[0] ** 2 * bc.sind(angles[1]) ** 2) + k ** 2 / spacings[1] ** 2 + l ** 2 /
+					 (spacings[2] ** 2 * bc.sind(angles[1]) ** 2) - 2 * h * l * bc.cosd(angles[1]) / (spacings[0] * spacings[2] *
+																									  bc.sind(angles[1]) ** 2)) ** 0.5
+	elif bf.length(spacings) == 3 and bf.length(angles) == 3:
 		# triklin
-		v = spacings[0] * spacings[1] * spacings[2] * (1 - gc.cosd(angles[0]) ** 2 - gc.cosd(angles[1]) ** 2 -
-			gc.cosd(angles[2]) ** 2 + 2 * gc.cosd(angles[0]) * gc.cosd(angles[1]) * gc.cosd(angles[2])) ** 0.5
-		s11 = spacings[1] ** 2 * spacings[2] ** 2 * gc.sind(angles[0]) ** 2
-		s22 = spacings[0] ** 2 * spacings[2] ** 2 * gc.sind(angles[1]) ** 2
-		s33 = spacings[0] ** 2 * spacings[1] ** 2 * gc.sind(angles[2]) ** 2
-		s12 = spacings[0] * spacings[1] * spacings[2] ** 2 * (gc.cosd(angles[0]) * gc.cosd(angles[1]) - gc.cosd(angles[2]))
-		s23 = spacings[0] ** 2 * spacings[1] * spacings[2] * (gc.cosd(angles[1]) * gc.cosd(angles[2]) - gc.cosd(angles[0]))
-		s13 = spacings[0] * spacings[1] ** 2 * spacings[2] * (gc.cosd(angles[2]) * gc.cosd(angles[0]) - gc.cosd(angles[1]))
+		v = spacings[0] * spacings[1] * spacings[2] * (1 - bc.cosd(angles[0]) ** 2 - bc.cosd(angles[1]) ** 2 -
+													   bc.cosd(angles[2]) ** 2 + 2 * bc.cosd(angles[0]) * bc.cosd(angles[1]) * bc.cosd(angles[2])) ** 0.5
+		s11 = spacings[1] ** 2 * spacings[2] ** 2 * bc.sind(angles[0]) ** 2
+		s22 = spacings[0] ** 2 * spacings[2] ** 2 * bc.sind(angles[1]) ** 2
+		s33 = spacings[0] ** 2 * spacings[1] ** 2 * bc.sind(angles[2]) ** 2
+		s12 = spacings[0] * spacings[1] * spacings[2] ** 2 * (bc.cosd(angles[0]) * bc.cosd(angles[1]) - bc.cosd(angles[2]))
+		s23 = spacings[0] ** 2 * spacings[1] * spacings[2] * (bc.cosd(angles[1]) * bc.cosd(angles[2]) - bc.cosd(angles[0]))
+		s13 = spacings[0] * spacings[1] ** 2 * spacings[2] * (bc.cosd(angles[2]) * bc.cosd(angles[0]) - bc.cosd(angles[1]))
 		dVals = (v ** 2 / (s11 * h ** 2 + s22 * k ** 2 + s33 * l ** 2 + 2 * s12 * h * k + 2 * s23 * k * l + 2 *
 			s13 * h * l)) ** 0.5
 	return dVals
@@ -205,10 +205,10 @@ def sin2PsiAnalysis(data, maxPsi=None):
 	hklVal = data['hklVal']
 	s1Val = data['s1Val']
 	hs2Val = data['hs2Val']
-	a0Val = gf.getDictValOrDef(data, 'a0Val')
+	a0Val = bf.getDictValOrDef(data, 'a0Val')
 	# define derived values
 	phiUni = np.sort(np.unique(phiVals))
-	sinpsi2 = gc.sind(psiVals) ** 2
+	sinpsi2 = bc.sind(psiVals) ** 2
 	sinpsi2Distr = np.arange(0, 1.001, 0.01)
 	psiUni = np.unique(psiVals)
 	psiUniWithoutZero = psiUni[psiUni != 0]
@@ -217,8 +217,8 @@ def sin2PsiAnalysis(data, maxPsi=None):
 	if maxPsi is not None:
 		psiUni = psiUni[(psiUni <= maxPsi) & (psiUni >= -maxPsi)]  # take only values smaller than or equal to |maxPsi°|
 	maxUsedPsi = np.max(np.abs(psiUni))
-	sinpsi2Uni = gc.sind(psiUni) ** 2
-	sin2psiUni = gc.sind(np.abs(2 * psiUni))
+	sinpsi2Uni = bc.sind(psiUni) ** 2
+	sin2psiUni = bc.sind(np.abs(2 * psiUni))
 	# define global regression values
 	mVals = np.zeros(6)
 	bVals = np.zeros(6)
@@ -247,7 +247,7 @@ def sin2PsiAnalysis(data, maxPsi=None):
 	vals0_180 = np.zeros((len(psiUni), 3))
 	vals90_270 = np.zeros((len(psiUni), 3))
 	for i in range(len(psiUni)):
-		if gf.max(gf.containsItems(psiVals, psiUni[i])[0])[0] and gf.max(gf.containsItems(psiVals, -psiUni[i])[0])[
+		if bf.max(bf.containsItems(psiVals, psiUni[i])[0])[0] and bf.max(bf.containsItems(psiVals, -psiUni[i])[0])[
 			0]:
 			# positive and negative psi values
 			val0 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 0)],
@@ -409,7 +409,7 @@ def sin2PsiAnalysis(data, maxPsi=None):
 		s12 = mVals[4] / (hs2Val * dStarVal)
 	ds12 = 2 * errVals[4] ** 0.5 / (hs2Val * dStarVal)
 	aStarVal = conv.latticeDists2aVals2(dStarVal, hklVal)
-	if a0Val is None:
+	if a0Val is None or a0Val == 0:
 		s33 = 0
 		ds33 = 0
 	else:
@@ -444,16 +444,16 @@ def sin2PsiAnalysis(data, maxPsi=None):
 
 #
 def multiWavelengthAnalysis(data, maxPsi=None):
-	keyList = gf.getKeyList(data)
-	peakCount = int(gf.replace(keyList[-1].split('_')[0], 'pv')) + 1  # must be adapted in further versions!!!
+	keyList = bf.getKeyList(data)
+	peakCount = int(bf.replace(keyList[-1].split('_')[0], 'pv')) + 1  # must be adapted in further versions!!!
 	phiVals = data['phi']
 	psiVals = data['psi']
-	tauMean = gf.zeros(peakCount)
-	hklList = gf.zeros(peakCount, dtypeVal=np.int)
-	s1Dec = gf.zeros(peakCount)
-	hs2Dec = gf.zeros(peakCount)
-	dStarVals = gf.zeros(peakCount)
-	dStarErrVals = gf.zeros(peakCount)
+	tauMean = bf.zeros(peakCount)
+	hklList = bf.zeros(peakCount, dtypeVal=np.int)
+	s1Dec = bf.zeros(peakCount)
+	hs2Dec = bf.zeros(peakCount)
+	dStarVals = bf.zeros(peakCount)
+	dStarErrVals = bf.zeros(peakCount)
 	stresses = np.zeros((peakCount, 6))  # s11-33 s22-33 s13 s23 s12 s33
 	accuracy = np.zeros((peakCount, 6))
 	integralWidth = np.zeros((peakCount, 6))  # phi0 phi90 phi180 phi270 phi45 phi225
@@ -483,7 +483,7 @@ def multiWavelengthAnalysis(data, maxPsi=None):
 		hs2Dec[p] = hs2Vals[0]
 		curData = {'dVals': dVals, 'dErr': dErrVals, 'tauVals': tauVals, 'phiVals': phiVals, 'psiVals': psiVals,
 			'hklVal': hklList[p], 's1Val': s1Dec[p], 'hs2Val': hs2Dec[p], 'ibVals': ibVals}
-		gf.extendDictionary(curData, data, ('a0Val',))
+		bf.extendDictionary(curData, data, ('a0Val',))
 		# perform sin2psi analysis for current peak data
 		curResData, curPlotData = sin2PsiAnalysis(curData, maxPsi)
 		# remember results
@@ -504,7 +504,7 @@ def multiWavelengthAnalysis(data, maxPsi=None):
 def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNormal=0.08,
 		minValPsiShear=0.8):
 	# extract needed data
-	a0Val = gf.getDictValOrDef(data, 'a0Val')
+	a0Val = bf.getDictValOrDef(data, 'a0Val')
 	psiUni = data['psiUni']
 	sin2psiUni = data['sin2psiUni']
 	sinpsi2Uni = data['sinpsi2Uni']
@@ -519,7 +519,7 @@ def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNorma
 	phi4 = data['phi4']
 	# define needed variables
 	sinpsi2Star = -2 * s1Val / hs2Val
-	psiStar = gc.asind(sinpsi2Star ** 0.5)
+	psiStar = bc.asind(sinpsi2Star ** 0.5)
 	valsAll = np.zeros((len(psiUni), 3))
 	fplus = np.zeros((len(psiUni), 3))
 	fminus = np.zeros((len(psiUni), 3))
@@ -561,7 +561,7 @@ def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNorma
 	used = valsAll[:, 0] != 0
 	if len(valsAll[used, 0]) > 1:
 		if maxPsi is not None:
-			usedReg = (sinpsi2Uni <= gc.sind(maxPsi) ** 2) & used
+			usedReg = (sinpsi2Uni <= bc.sind(maxPsi) ** 2) & used
 		else:
 			usedReg = used
 		[m, b, CoD, yD, err, mErr, bErr] = dm.linRegWeighted(sinpsi2Uni[usedReg], valsAll[usedReg, 0],
@@ -621,13 +621,13 @@ def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNorma
 		errVals[used, 2] = np.abs(f13[used, 2] - f13[used, 1]) / 2
 		errVals[used, 3] = np.abs(f23[used, 2] - f23[used, 1]) / 2
 		# also determine s33
-		minVal, minPos = gf.min(abs(psiVals - psiStar))
-		tauS33 = np.mean(tauVals[minPos])
-		#leftVal, leftPos = gf.max(psiVals[psiVals < psiStar])
-		#rightVal, rightPos = gf.min(psiVals[psiVals > psiStar])
+		minVal, minPos = bf.min(abs(psiVals - psiStar))
+		tauS33 = np.mean(tauVals[minPos])  # tau equivalent to condition at psiStar
+		#leftVal, leftPos = bf.max(psiVals[psiVals < psiStar])
+		#rightVal, rightPos = bf.min(psiVals[psiVals > psiStar])
 		#tauS33 = np.interp(psiStar, [leftVal, rightVal], [tauVals[leftPos], tauVals[rightPos]])
 		aStarVal = conv.latticeDists2aVals2(dStarVal, hklVal)
-		if a0Val is None:
+		if a0Val is None or a0Val == 0:
 			s33 = 0
 			ds33 = 0
 		else:
@@ -640,8 +640,8 @@ def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNorma
 
 def multiUniversalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15,
 		minValPsiNormal=0.08, minValPsiShear=0.8):
-	keyList = gf.getKeyList(data)
-	peakCount = int(gf.replace(keyList[-1].split('_')[0], 'pv')) + 1  # must be adapted in further versions!!!
+	keyList = bf.getKeyList(data)
+	peakCount = int(bf.replace(keyList[-1].split('_')[0], 'pv')) + 1  # must be adapted in further versions!!!
 	tthVal = data['tth']
 	phiVals = data['phi']
 	psiVals = data['psi']
@@ -649,8 +649,8 @@ def multiUniversalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15,
 	psiUni = psiUni[psiUni != 0]  # no zero value
 	psiSign = np.sign(psiUni[-1])  # sign of last psi value
 	psiUni = psiUni[np.sign(psiUni) == psiSign]  # only negative or positive values
-	sinpsi2Uni = gc.sind(psiUni) ** 2
-	sin2psiUni = gc.sind(np.abs(2 * psiUni))
+	sinpsi2Uni = bc.sind(psiUni) ** 2
+	sin2psiUni = bc.sind(np.abs(2 * psiUni))
 	tauRes = np.zeros((peakCount, len(psiUni)))
 	hklRes = np.zeros((peakCount, len(psiUni)))
 	psiRes = np.zeros((peakCount, len(psiUni)))
@@ -692,7 +692,7 @@ def multiUniversalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15,
 		curData = {'tauVals': tauVals, 'dVals': dVals, 'dErrVals': dErrVals, 'psiVals': psiVals,
 			'phiVals': phiVals, 'psiUni': psiUni, 'sin2psiUni': sin2psiUni, 'sinpsi2Uni': sinpsi2Uni, 'phi4': phi4,
 			'hklVal': hklVal, 's1Val': s1Val, 'hs2Val': hs2Val}
-		gf.extendDictionary(curData, data, ('a0Val',))
+		bf.extendDictionary(curData, data, ('a0Val',))
 		# perform universal plot analysis for current peak data
 		curResData = universalPlotAnalysis(curData, maxPsi, minDistPsiStar,
 			minValPsiNormal, minValPsiShear)
@@ -707,11 +707,11 @@ def multiUniversalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15,
 		dev_s33[p] = curResData['dev_s33']
 		validCounter += curResData['validCounter']
 	# reshape data
-	tauRes = np.reshape(tauRes, np.prod(gf.size(tauRes)))
-	hklRes = np.reshape(hklRes, np.prod(gf.size(hklRes)))
-	psiRes = np.reshape(psiRes, np.prod(gf.size(psiRes)))
-	stresses = np.reshape(stresses, (gf.size(stresses, 0) * gf.size(stresses,1), gf.size(stresses, 2)))
-	errVals = np.reshape(errVals, (gf.size(errVals, 0) * gf.size(errVals, 1), gf.size(errVals, 2)))
+	tauRes = np.reshape(tauRes, np.prod(bf.size(tauRes)))
+	hklRes = np.reshape(hklRes, np.prod(bf.size(hklRes)))
+	psiRes = np.reshape(psiRes, np.prod(bf.size(psiRes)))
+	stresses = np.reshape(stresses, (bf.size(stresses, 0) * bf.size(stresses,1), bf.size(stresses, 2)))
+	errVals = np.reshape(errVals, (bf.size(errVals, 0) * bf.size(errVals, 1), bf.size(errVals, 2)))
 	# remove values with tau = 0
 	hklRes = hklRes[tauRes > 0]
 	psiRes = psiRes[tauRes > 0]
@@ -752,21 +752,21 @@ def stressDampedPolynomReal(par, x):
 def stressCurve(damping, n, tauVals, stresses, zVals=None):
 	if zVals is None:
 		zVals = tauVals
-	if gf.size(stresses, 0) > 1 and gf.size(stresses, 1) > 1:
-		if gf.size(stresses, 0) == 2 and gf.size(stresses, 1) == gf.length(tauVals):
+	if bf.size(stresses, 0) > 1 and bf.size(stresses, 1) > 1:
+		if bf.size(stresses, 0) == 2 and bf.size(stresses, 1) == bf.length(tauVals):
 			stressVals = stresses[0, :]
 			weigthVals = stresses[1, :]
-		elif gf.size(stresses, 0) == gf.length(tauVals) and gf.size(stresses, 1) == 2:
+		elif bf.size(stresses, 0) == bf.length(tauVals) and bf.size(stresses, 1) == 2:
 			stressVals = stresses[:, 0]
 			weigthVals = stresses[:, 1]
 		# stress accuracy values used to weigthen the stress values
-		[tauValsFit, stressVals] = gc.createWeightedData(tauVals, stressVals, weigthVals)
+		[tauValsFit, stressVals] = bc.createWeightedData(tauVals, stressVals, weigthVals)
 	else:
 		tauValsFit = tauVals
 		stressVals = stresses
 	if damping:
 		stressDampedPolynomTauOpt = lambda par, x, y: stressDampedPolynomTau(par, x) - y
-		res = op.leastsq(stressDampedPolynomTauOpt, gf.ones(n), (tauValsFit, stressVals))
+		res = op.leastsq(stressDampedPolynomTauOpt, bf.ones(n), (tauValsFit, stressVals))
 		aVals = res[0]
 		err = res[1]
 		tauStresses = stressDampedPolynomTau(aVals, tauVals)
@@ -787,20 +787,20 @@ def hklGenerator(phase, latticePar, tth, energyRange=None):
 	latticePar = np.multiply(latticePar, 10)  # adapt lattice parameter to match Angstroem unit (used in calculations)
 	hklTable = np.array([])
 	if phase == 'hcp' or phase == 'HCP' or phase == 'Hcp':
-		if gf.length(latticePar) > 2:
+		if bf.length(latticePar) > 2:
 			a = latticePar[0]
 			c = latticePar[2]
 		else:
 			a = latticePar[0]
 			c = latticePar[1]
-		for h in gf.createRange(0, 1, 10):
-			for k in gf.createRange(0, 1, h):
-				for l in gf.createRange(0, 1, 10):
+		for h in bf.createRange(0, 1, 10):
+			for k in bf.createRange(0, 1, h):
+				for l in bf.createRange(0, 1, 10):
 					# hkl: l = even or h+2k ~= 3n
 					if (h + k + l) > 0 and ((l % 2) == 0 or ((h + 2 * k) % 3) * ((h + 2 * k) % 3) != 0):
 						# dVal = latticeSpacings([a, c], [90, 120], h, k, l)
 						dVal = (1 / ((4 / 3 * (h ** 2 + h * k + k ** 2) / a ** 2) + (l ** 2 / c ** 2))) ** 0.5
-						energy = 12.39842 / (2 * dVal * gc.sind(tth / 2))
+						energy = 12.39842 / (2 * dVal * bc.sind(tth / 2))
 						if energyRange is not None:
 							if energy > energyRange[0] and energy < energyRange[1]:
 								if len(hklTable) > 0:
@@ -808,17 +808,17 @@ def hklGenerator(phase, latticePar, tth, energyRange=None):
 								else:
 									hklTable = np.hstack([hklTable, [h, k, l, dVal, energy]])
 	elif phase == 'fcc' or phase == 'FCC' or phase == 'Fcc':
-		if gf.length(latticePar) > 1:
+		if bf.length(latticePar) > 1:
 			a = latticePar[0]
 		else:
 			a = latticePar
-		for h in gf.createRange(0, 1, 10):
-			for k in gf.createRange(0, 1, h):
-				for l in gf.createRange(0, 1, k):
+		for h in bf.createRange(0, 1, 10):
+			for k in bf.createRange(0, 1, h):
+				for l in bf.createRange(0, 1, k):
 					# hkl: h,k,l = odd or h,k,l = even
 					if (h + k + l) > 0 and ((h % 2) * (k % 2) * (l % 2) != 0 or (h % 2) + (k % 2) + (l % 2) == 0):
 						dVal = conv.aVals2latticeDists(a, h, k, l)
-						energy = 12.39842 / (2 * dVal * gc.sind(tth / 2))
+						energy = 12.39842 / (2 * dVal * bc.sind(tth / 2))
 						if energyRange is not None:
 							if energy > energyRange[0] and energy < energyRange[1]:
 								if len(hklTable) > 0:
@@ -826,17 +826,17 @@ def hklGenerator(phase, latticePar, tth, energyRange=None):
 								else:
 									hklTable = np.hstack([hklTable, [h, k, l, dVal, energy]])
 	elif phase == 'bcc' or phase == 'BCC' or phase == 'Bcc':
-		if gf.length(latticePar) > 1:
+		if bf.length(latticePar) > 1:
 			a = latticePar[0]
 		else:
 			a = latticePar
-		for h in gf.createRange(0, 1, 10):
-			for k in gf.createRange(0, 1, h):
-				for l in gf.createRange(0, 1, k):
+		for h in bf.createRange(0, 1, 10):
+			for k in bf.createRange(0, 1, h):
+				for l in bf.createRange(0, 1, k):
 					#hkl: h+k+l = even
 					if (h + k + l) > 0 and (h + k + l) % 2 == 0:
 						dVal = conv.aVals2latticeDists(a, h, k, l)
-						energy = 12.39842 / (2 * dVal * gc.sind(tth / 2))
+						energy = 12.39842 / (2 * dVal * bc.sind(tth / 2))
 						if energyRange is not None:
 							if energy > energyRange[0] and energy < energyRange[1]:
 								if len(hklTable) > 0:

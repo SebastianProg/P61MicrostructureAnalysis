@@ -7,8 +7,8 @@ Created on Sun Mar 17 22:53:13 2019
 
 from io import StringIO  # for handling unicode strings
 
-import BasicFunctions.generalFunctions as gf
-import FileHandling.generalFileHandling as gfh
+import basics.functions as bf
+import filehandling.general as fg
 
 
 def importNumericalDataWithHeader(importFile='', delim='\t', withMetaLine=False, skipCols=0,
@@ -16,7 +16,7 @@ def importNumericalDataWithHeader(importFile='', delim='\t', withMetaLine=False,
 	data = dict()
 	header = 0
 	if len(importFile) == 0:
-		importFile = gfh.requestFiles(fileType, diagTitle, multiSel)
+		importFile = fg.requestFiles(fileType, diagTitle, multiSel)
 		importFile = importFile[0]
 	if len(importFile) > 0:
 		# read header data from file
@@ -26,43 +26,43 @@ def importNumericalDataWithHeader(importFile='', delim='\t', withMetaLine=False,
 			skipRows = 2
 		else:
 			skipRows = 1
-		rawData = gfh.dlmread(importFile, delim, skipRows, usedCols=range(skipCols, len(heading)))
+		rawData = fg.dlmread(importFile, delim, skipRows, usedCols=range(skipCols, len(heading)))
 		# convert data to dictionary
-		data = gf.matrix2dict(rawData, heading[skipCols:])
+		data = bf.matrix2dict(rawData, heading[skipCols:])
 	return data, metaInfo
 
 
 def importFileHeader(importFile='', delim='\t', withMetaLine=False,
 		fileType=(('Data file', '*.txt'), ('Data file', '*.dat')), diagTitle='Select data file', multiSel='off'):
 	if len(importFile) == 0:
-		importFile = gfh.requestFiles(fileType, diagTitle, multiSel)
+		importFile = fg.requestFiles(fileType, diagTitle, multiSel)
 		importFile = importFile[0]
 	if len(importFile) > 0:
 		# read header from file
 		if withMetaLine:
-			heading = gfh.readLines(importFile, 2)
+			heading = fg.readLines(importFile, 2)
 			# first line consists of comments or metadata
 			metaInfo = heading[0]
 			# second line contains header information
-			heading = gf.split(heading[1], delim)
+			heading = bf.split(heading[1], delim)
 		else:
-			heading = gfh.readLines(importFile, 1)
+			heading = fg.readLines(importFile, 1)
 			metaInfo = ''
-			heading = gf.split(heading[0], '\t')
+			heading = bf.split(heading[0], '\t')
 	return heading, metaInfo
 
 
 def loadFileP61A(fileP61A=""):
 	rawData = 0
 	if len(fileP61A) == 0:
-		fileP61A = gfh.requestFiles((('Data file', '*.dat'),), 'Select P61A data file', 'off')
+		fileP61A = fg.requestFiles((('Data file', '*.dat'),), 'Select P61A data file', 'off')
 		fileP61A = fileP61A[0]
 	if len(fileP61A) > 0:
 		# read header data from file
 		heading, metaInfo = importFileHeader(fileP61A, '\t', True, (('Data file', '*.dat'),),
 			'Select P61A data file', 'off')
 		# the first column is text
-		rawData = gfh.dlmread(fileP61A, '\t', 2, usedCols=range(1, len(heading)))
+		rawData = fg.dlmread(fileP61A, '\t', 2, usedCols=range(1, len(heading)))
 	return rawData, heading, metaInfo
 
 
@@ -74,7 +74,7 @@ def loadFileP61A2(fileP61A=''):
 def sin2PsiHeader():
 	fileHead = ['hkl', 'tau_um', 'dStar100_nm', 'dStar100Dev', 's11-s33', 'dev_s11', 's22-s33', 'dev_s22',
 		's13', 'dev_s13', 's23', 'dev_s23', 's12', 'dev_s12', 's33', 'dev_s33', 'IBs_keV']
-	return gf.stringList2string(fileHead, delim='\t') + gf.newlineChar()
+	return bf.stringList2string(fileHead, delim='\t') + bf.newlineChar()
 
 
 def sin2PsiResults(data):
@@ -87,7 +87,7 @@ def sin2PsiResults(data):
 	valuesIb = data['integralWidth']
 	for i in range(len(valuesIb)):
 		text.write('\t%.6f' % valuesIb[i])
-	gfh.writeLine(text, '')
+	fg.writeLine(text, '')
 	return text.getvalue()
 
 
@@ -111,7 +111,7 @@ def multiWavelengthResults(data):
 
 def universalplotHeader():
 	fileHead = ['tau_um', 's11-s33', 'dev_s11', 's22-s33', 'dev_s22', 's13', 'dev_s13', 's23', 'dev_s23', 'hkl', 'psi']
-	return gf.stringList2string(fileHead, delim='\t') + gf.newlineChar()
+	return bf.stringList2string(fileHead, delim='\t') + bf.newlineChar()
 
 
 def universalPlotResults(data):
@@ -127,13 +127,13 @@ def universalPlotResults(data):
 		text.write('%.3f\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%g\t%.3f' % (tauVals[i],
 		stresses[i][0], accuracy[i][0], stresses[i][1], accuracy[i][1], stresses[i][2], accuracy[i][2],
 		stresses[i][3], accuracy[i][3], hklVals[i], psiVals[i]))
-		gfh.writeLine(text, '')
+		fg.writeLine(text, '')
 	return text.getvalue()
 
 
 def universalplotS33Header():
 	fileHead = ['tau_um', 'dStar100_nm', 'dStar100Dev', 's33', 'dev_s33', 'hkl']
-	return gf.stringList2string(fileHead, delim='\t') + gf.newlineChar()
+	return bf.stringList2string(fileHead, delim='\t') + bf.newlineChar()
 
 
 def universalPlotS33Results(data):
@@ -141,7 +141,7 @@ def universalPlotS33Results(data):
 	text = StringIO()
 	text.write('%.3f\t%.8f\t%.8f\t%.0f\t%.0f\t%g' % (data['tauMean'], data['dStar100'], data['dStar100Err'],
 		data['s33'], data['dev_s33'], data['hklVal']))
-	gfh.writeLine(text, '')
+	fg.writeLine(text, '')
 	return text.getvalue()
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 
-import BasicFunctions.generalFunctions as gf
-import BasicFunctions.generalCalculations as gc
+import basics.functions as bf
+import basics.calculations as bc
 
 
 # Determine linear regression of given values
@@ -14,9 +14,9 @@ def linReg(x, y, fixParName='', fixPar=0):  # scipy.stats.linregress(x, y=None)
 	x = np.array(x)
 	y = np.array(y)
 	# check dimensions of values
-	if gf.size(x, 0) != gf.size(y, 0) or gf.size(x, 1) != gf.size(y, 1):
+	if bf.size(x, 0) != bf.size(y, 0) or bf.size(x, 1) != bf.size(y, 1):
 		# try to transpose data
-		if gf.size(x,0) == gf.size(np.transpose(y), 0) and gf.size(x, 1) == gf.size(np.transpose(y), 1):
+		if bf.size(x,0) == bf.size(np.transpose(y), 0) and bf.size(x, 1) == bf.size(np.transpose(y), 1):
 			y = np.transpose(y)
 	sumX = sum(x)
 	sumY = sum(y)
@@ -36,7 +36,7 @@ def linReg(x, y, fixParName='', fixPar=0):  # scipy.stats.linregress(x, y=None)
 		#b = (sumXX * sumY - sumX * sumXY) / (n * sumXX - sumX**2)
 		#m = (sumXY - b * sumX) / sumXX
 	yD = m * x + b
-	CoD = 1 - sum((y - yD) ** 2) / sum((y - meanY) ** 2)
+	CoD = 1 - sum((y - yD) ** 2) / sum((y - meanY) ** 2)  # RuntimeWarning: invalid value encountered in double_scalars
 	err = sum((y - yD) ** 2) / (n * (n - 1)) # variance
 	mErr = err / sum((x - meanX)**2)
 	bErr = err / n * sum(x**2) / sum((x - meanX)**2)
@@ -49,7 +49,7 @@ def linReg(x, y, fixParName='', fixPar=0):  # scipy.stats.linregress(x, y=None)
 # returns:
 # increasing, constant offset, coefficient of determination, determined values
 def linRegWeighted(x, y, a, fixParName='', fixPar=0):
-	xNew, yNew = gc.createWeightedData(x, y, a)
+	xNew, yNew = bc.createWeightedData(x, y, a)
 	# linear regression with new data set
 	m, b, CoD, yD, err, mErr, bErr = linReg(xNew, yNew, fixParName, fixPar)
 	yD = m * x + b

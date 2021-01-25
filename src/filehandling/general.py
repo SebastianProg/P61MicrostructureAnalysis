@@ -11,7 +11,7 @@ import numpy as np
 import os
 import nexusformat.nexus as nxs
 
-import BasicFunctions.generalFunctions as gf
+import basics.functions as bf
 
 
 def fileparts(fullFile):
@@ -78,7 +78,7 @@ def requestDirectory(parentWindow=None, dialogTitle="Select a folder:", folder=o
 
 
 def writeLine(fileId, data):
-	fileId.write(data + gf.newlineChar())
+	fileId.write(data + bf.newlineChar())
 
 
 def writeData(fileId, formatStr, dataArray):
@@ -94,7 +94,7 @@ def dlmread(file, delim="\t", skipRows=0, usedCols=None, maxRows=None, commentSt
 		usecols=usedCols, max_rows=maxRows)
 
 
-def dlmwrite(file, data, delim="\t", newln=gf.newlineChar(), head="", foot="", commentStr="", append="off", format="%.18e"):
+def dlmwrite(file, data, delim="\t", newln=bf.newlineChar(), head="", foot="", commentStr="", append="off", format="%.18e"):
 	if append == "on":
 		fid = open(file,'ab')
 		np.savetxt(fid, data, fmt=format, delimiter=delim, newline=newln, header=head, footer=foot, comments=commentStr)
@@ -119,12 +119,12 @@ def readLines(fileName, lines=None, startLine=0):
 def writeList(file, listData, delim='\t'):
 	# write list data to file
 	fid = open(file, 'w')
-	for i in range(gf.size(listData, 0)):
-		if gf.size(listData[i], 0) > 1:
+	for i in range(bf.size(listData, 0)):
+		if bf.size(listData[i], 0) > 1:
 			fid.write(str(listData[i][0]))
-			for j in range(1, gf.size(listData[i], 0)):
+			for j in range(1, bf.size(listData[i], 0)):
 				fid.write(delim + str(listData[i][j]))
-		elif gf.size(listData[i], 0) == 1:
+		elif bf.size(listData[i], 0) == 1:
 			fid.write(str(listData[i]))
 		else:
 			fid.write('')
@@ -152,9 +152,9 @@ def saveSettings(settingsDict, fileName=None):
 		if parstr.isidentifier():
 			parstr = "'" + parstr + "'"
 		elif parstr.startswith('[['):
-			parstr = gf.matrix2str(item[1])
+			parstr = bf.matrix2str(item[1])
 		elif parstr.startswith('['):
-			parstr = '[' + gf.array2str(item[1], ', ') + ']'
+			parstr = '[' + bf.array2str(item[1], ', ') + ']'
 		writeLine(fid, item[0] + '\t' + parstr)
 	fid.close()
 	return fileName

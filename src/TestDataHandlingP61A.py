@@ -1,14 +1,14 @@
 import numpy as np
 
-import BasicFunctions.generalFunctions as gf
-import Diffraction.diffractionCalculations as dc
-import Diffraction.conversions as conv
-import FileHandling.generalFileHandling as gfh
-import FileHandling.specificFileHandling as sfh
-import Plotting.specificPlotting as spl
+import basics.functions as bf
+import diffraction.calculations as dc
+import diffraction.conversions as conv
+import filehandling.general as fg
+import filehandling.specific as fs
+import plotting.specific as ps
 
 # test hkl generator and energy calculation of material
-gf.init()
+bf.init()
 phase = 'bcc'
 aVal = 0.28665
 tth = 7
@@ -34,36 +34,38 @@ dc.calc3Gamma2(hklValsLab6)
 plotResMwl = True
 plotResUvp = True
 showErr = True
+# showErr = False
 checkUvpVals = True
-fileNames = gfh.requestFiles((("Data files", "*.dat"),), "Select P61A data file", "on")
+fileNames = fg.requestFiles((("Data files", "*.dat"),), "Select P61A data file", "on")
 # import all data
 allData = dict()
 allMetaInfo = dict()
 for fileName in fileNames:
-	data, metaInfo = sfh.loadFileP61A2(fileName)
+	data, metaInfo = fs.loadFileP61A2(fileName)
 	allData[fileName] = data
 	allMetaInfo[fileName] = metaInfo
 # combine all data for one analysis
 combinedData = allData[fileNames[0]]
-keyList = gf.getKeyList(combinedData)
+keyList = bf.getKeyList(combinedData)
 for fileName in fileNames[1:]:
 	for key in keyList:
 		combinedData[key] = np.concatenate((combinedData[key], allData[fileName][key]))
 # prepare data for multi wavelength and universal plot analysis
 a0Val = 0.289
 tthVal = 7
-inputData = gf.combineDictionaries({'a0Val': a0Val, 'tth': tthVal}, combinedData)
+# tthVal = 15
+inputData = bf.combineDictionaries({'a0Val': a0Val, 'tth': tthVal}, combinedData)
 # perform multi wavelength analysis
 maxPsi = 45
 resDataMwl, plotDataMwl = dc.multiWavelengthAnalysis(inputData, maxPsi)
 # plot the results
 if plotResMwl:
-	spl.plotMultiWavelength(plotDataMwl, showErr)
-	#spl.plotIntegralWidth(resDataMwl, showErr)
-	spl.plotStrainFreeLatticeSpacing(resDataMwl, showErr)
-	spl.plotStresses(resDataMwl, showErr)
+	ps.plotMultiWavelength(plotDataMwl, showErr)
+	#ps.plotIntegralWidth(resDataMwl, showErr)
+	ps.plotStrainFreeLatticeSpacing(resDataMwl, showErr)
+	ps.plotStresses(resDataMwl, showErr)
 # write results to file
-gfh.export(sfh.sin2PsiHeader() + sfh.multiWavelengthResults(resDataMwl))
+fg.export(fs.sin2PsiHeader() + fs.multiWavelengthResults(resDataMwl))
 # perform universal plot
 if checkUvpVals:
 	minDistPsiStar = 0.15
@@ -77,10 +79,11 @@ resDataUvp, resDataS33 = dc.multiUniversalPlotAnalysis(inputData, maxPsi, minDis
 	minValPsiNormal, minValPsiShear)
 # plot the results
 if plotResUvp:
-	spl.plotUniversalPlot(resDataUvp, showErr)
-	#spl.plotMultiUniversalPlot(resDataUvp, showErr)
-	spl.plotStrainFreeLatticeSpacing(resDataS33, showErr)
-	spl.plotStresses(resDataS33, showErr)
+	ps.plotUniversalPlot(resDataUvp, showErr)
+	#ps.plotMultiUniversalPlot(resDataUvp, showErr)
+	ps.plotStrainFreeLatticeSpacing(resDataS33, showErr)
+	ps.plotStresses(resDataS33, showErr)
 # write results to files
-gfh.export(sfh.universalplotHeader() + sfh.universalPlotResults(resDataUvp))
-gfh.export(sfh.universalplotS33Header() + sfh.multiUniversalPlotS33Results(resDataS33))
+fg.export(fs.universalplotHeader() + fs.universalPlotResults(resDataUvp))
+fg.export(fs.universalplotS33Header() + fs.multiUniversalPlotS33Results(resDataS33))
+

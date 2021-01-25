@@ -112,8 +112,8 @@ def plotMatrix(data, minVal=None, maxVal=None, titleStr=None, showColBar=False):
 		plt.title(titleStr)
 	if showColBar:
 		plt.colorbar()
-	# plt.xlim(0, gf.size(data,0))
-	# plt.ylim(0, gf.size(data,1))
+	# plt.xlim(0, bf.size(data,0))
+	# plt.ylim(0, bf.size(data,1))
 	plt.show()
 
 

@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import BasicFunctions.generalFunctions as gf
-import BasicFunctions.generalCalculations as gc
-import Plotting.generalPlotting as gpl
+import basics.functions as bf
+import basics.calculations as bc
+import plotting.general as pg
 
 
 def stereoProjPlot(phi, psi, int=None, lineSpec='', titleText=None, maxPsi=90, fig=None, partPlot=False, thetaStep=None,
@@ -18,13 +18,13 @@ def stereoProjPlot(phi, psi, int=None, lineSpec='', titleText=None, maxPsi=90, f
 		fig = plt.figure()
 	ax = fig.add_subplot(111, projection='polar')
 	if int is None:
-		#c = ax.scatter(np.deg2rad(phi), gc.tand(0.5 * psi))
+		#c = ax.scatter(np.deg2rad(phi), bc.tand(0.5 * psi))
 		if len(lineSpec) > 0:
-			c = plt.polar(np.deg2rad(phi), gc.tand(0.5 * psi), lineSpec)
+			c = plt.polar(np.deg2rad(phi), bc.tand(0.5 * psi), lineSpec)
 		else:
-			c = plt.polar(np.deg2rad(phi), gc.tand(0.5 * psi))
+			c = plt.polar(np.deg2rad(phi), bc.tand(0.5 * psi))
 	else:
-		c = ax.scatter(np.deg2rad(phi), gc.tand(0.5 * psi), c = int, cmap='jet')
+		c = ax.scatter(np.deg2rad(phi), bc.tand(0.5 * psi), c = int, cmap='jet')
 		fig.colorbar(c, orientation=cbarOri)
 	if thetaStep is not None:
 		plt.thetagrids(np.array(range(0, 360, thetaStep)))
@@ -47,9 +47,9 @@ def changeStereoProjPlot(plotObj, phi, psi, int=None, maxPsi=90):
 	psi = psi[(psi >= 0) & (psi <= maxPsi)]
 	# set new values of plot
 	if int is not None:
-		gpl.setPlotDataPolar(plotObj, gc.tand(0.5 * psi), np.deg2rad(phi), int)
+		pg.setPlotDataPolar(plotObj, bc.tand(0.5 * psi), np.deg2rad(phi), int)
 	else:
-		gpl.setPlotData(plotObj, gc.tand(0.5 * psi), np.deg2rad(phi), int)
+		pg.setPlotData(plotObj, bc.tand(0.5 * psi), np.deg2rad(phi), int)
 
 
 # This function gets a spectrum plot (over energy, lattice distances,
@@ -93,13 +93,13 @@ def plotSin2Psi(data, showErr=True):
 	sinpsi2Star = data['sinpsi2Star']
 	# define derived values
 	phiUni = np.sort(np.unique(phiVals))
-	sinpsi2 = gc.sind(psiVals)**2
+	sinpsi2 = bc.sind(psiVals) ** 2
 	psiUni = np.unique(psiVals)
 	psiUniWithoutZero = psiUni[psiUni != 0]
 	psiSign = np.sign(psiUniWithoutZero[-1])  # sign of last psi value
 	psiUni = psiUni[(np.sign(psiUni) == psiSign) | (psiUni == 0)]  # only negative or positive values
 	maxUsedPsi = np.max(np.abs(psiUni))
-	sinpsi2Uni = gc.sind(psiUni)**2
+	sinpsi2Uni = bc.sind(psiUni) ** 2
 	sinpsi2Distr = np.arange(0, 1.001, 0.01)
 	t = plt.figure()
 	for i in range(len(phiUni)):  # for each phi value plot data points
@@ -152,7 +152,7 @@ def plotSin2Psi(data, showErr=True):
 			plt.plot(sinpsi2Distr,
 				mVals[1] * sinpsi2Distr - mVals[3] * 2 * (sinpsi2Distr * (1 - sinpsi2Distr)) ** 0.5 + bVals[1], 'k:')
 	# plot line at sin2psiStar
-	plt.vlines(gf.ones(2, 1) * sinpsi2Star, np.min(dVals), np.max(dVals), 'k', 'dashed')
+	# plt.vlines(bf.ones(2, 1) * sinpsi2Star, np.min(dVals), np.max(dVals), 'k', 'dashed')
 	plt.grid()
 	plt.xlabel('sin^2 psi')
 	plt.ylabel('d [nm]')
@@ -163,7 +163,7 @@ def plotSin2Psi(data, showErr=True):
 
 
 def plotMultiWavelength(data, showErr=True):
-	hklNames = gf.getKeyList(data)
+	hklNames = bf.getKeyList(data)
 	for hkl in hklNames:
 		plotSin2Psi(data[hkl], showErr)
 
@@ -174,71 +174,71 @@ def plotUniversalPlot(data, showErr=True):
 	# extract relevant data
 	tauVals = data['tauVals']
 	psiVals = data['psiVals']
-	stresses = gf.getDictValOrDef(data, 'stresses')
-	accuracy = gf.getDictValOrDef(data, 'accuracy')
+	stresses = bf.getDictValOrDef(data, 'stresses')
+	accuracy = bf.getDictValOrDef(data, 'accuracy')
 	stressNames = ['s11-s33', 's22-s33', 's13', 's23']
 	if stresses is not None and accuracy is not None:
-		for i in range(gf.size(stresses, 1)):
+		for i in range(bf.size(stresses, 1)):
 			curStresses = np.round(stresses[:, i])
 			if sum(curStresses) != 0 or max(curStresses) != 0 or min(curStresses) != 0:
 				if showErr:
-					# gpl.plotErrData(curStresses, np.round(accuracy[:, i]), tauVals, 'rp', 'on', 'Information depths in um',
+					# pg.plotErrData(curStresses, np.round(accuracy[:, i]), tauVals, 'rp', 'on', 'Information depths in um',
 					# 	'Residual stresses in MPa', 'Residual stresses ' + stressNames[i], 'k')
-					gpl.plotErrData(curStresses, np.round(accuracy[:, i]), tauVals, 'rp', 'on', 'Information depths in um',
+					pg.plotErrData(curStresses, np.round(accuracy[:, i]), tauVals, 'rp', 'on', 'Information depths in um',
 						'Residual stresses in MPa', 'Residual stresses ' + stressNames[i])
 				else:
-					gpl.plotData(curStresses, tauVals, 'rp', 'on', 'Information depths in um',
+					pg.plotData(curStresses, tauVals, 'rp', 'on', 'Information depths in um',
 						'Residual stresses in MPa', 'Residual stresses ' + stressNames[i])
 	else:
 		for stressName in stressNames:
-			stressVals = gf.getDictValOrDef(data, stressName)
-			accuracyVals = gf.getDictValOrDef(data, 'dev_' + stressName)
+			stressVals = bf.getDictValOrDef(data, stressName)
+			accuracyVals = bf.getDictValOrDef(data, 'dev_' + stressName)
 			if stressVals is not None and accuracyVals is not None:
 				if sum(stressVals) != 0 or max(stressVals) != 0 or min(stressVals) != 0:
 					if showErr:
-						# gpl.plotErrData(np.round(stressVals), np.round(accuracyVals), tauVals, 'rp', 'on', 'Information depths in um',
+						# pg.plotErrData(np.round(stressVals), np.round(accuracyVals), tauVals, 'rp', 'on', 'Information depths in um',
 						# 	'Residual stresses in MPa', 'Residual stresses ' + stressName, 'k')
-						gpl.plotErrData(np.round(stressVals), np.round(accuracyVals), tauVals, 'rp', 'on',
+						pg.plotErrData(np.round(stressVals), np.round(accuracyVals), tauVals, 'rp', 'on',
 							'Information depths in um', 'Residual stresses in MPa',
 							'Residual stresses ' + stressName)
 					else:
-						gpl.plotData(np.round(stressVals), tauVals, 'rp', 'on', 'Information depths in um',
+						pg.plotData(np.round(stressVals), tauVals, 'rp', 'on', 'Information depths in um',
 							'Residual stresses in MPa', 'Residual stresses ' + stressName)
 
 
 def plotStresses(data, showErr=True):
 	hklList = data['hklList']
 	tauMean = data['tauMean']
-	stresses = gf.getDictValOrDef(data, 'stresses')
-	accuracy = gf.getDictValOrDef(data, 'accuracy')
+	stresses = bf.getDictValOrDef(data, 'stresses')
+	accuracy = bf.getDictValOrDef(data, 'accuracy')
 	stressNames = ['s11-s33', 's22-s33', 's13', 's23', 's12', 's33']
 	if stresses is not None and accuracy is not None:
-		for i in range(gf.size(stresses, 1)):
+		for i in range(bf.size(stresses, 1)):
 			curStresses = np.round(stresses[:, i])
 			if sum(curStresses) != 0 or max(curStresses) != 0 or min(curStresses) != 0:
 				if showErr:
-					# gpl.plotErrData(curStresses, np.round(accuracy[:, i]), tauMean, 'ro-', 'on', 'Information depths in um',
+					# pg.plotErrData(curStresses, np.round(accuracy[:, i]), tauMean, 'ro-', 'on', 'Information depths in um',
 					# 	'Residual stresses in MPa', 'Residual stresses ' + stressNames[i], 'k')
-					gpl.plotErrData(curStresses, np.round(accuracy[:, i]), tauMean, 'ro-', 'on',
+					pg.plotErrData(curStresses, np.round(accuracy[:, i]), tauMean, 'ro-', 'on',
 						'Information depths in um', 'Residual stresses in MPa',
 						'Residual stresses ' + stressNames[i])
 				else:
-					gpl.plotData(curStresses, tauMean, 'ro-', 'on', 'Information depths in um',
+					pg.plotData(curStresses, tauMean, 'ro-', 'on', 'Information depths in um',
 						'Residual stresses in MPa', 'Residual stresses ' + stressNames[i])
 	else:
 		for stressName in stressNames:
-			stressVals = gf.getDictValOrDef(data, stressName)
-			accuracyVals = gf.getDictValOrDef(data, 'dev_' + stressName)
+			stressVals = bf.getDictValOrDef(data, stressName)
+			accuracyVals = bf.getDictValOrDef(data, 'dev_' + stressName)
 			if stressVals is not None and accuracyVals is not None:
 				if sum(stressVals) != 0 or max(stressVals) != 0 or min(stressVals) != 0:
 					if showErr:
-						# gpl.plotErrData(np.round(stressVals), np.round(accuracyVals), tauMean, 'ro-', 'on', 'Information depths in um',
+						# pg.plotErrData(np.round(stressVals), np.round(accuracyVals), tauMean, 'ro-', 'on', 'Information depths in um',
 						# 	'Residual stresses in MPa', 'Residual stresses ' + stressName, 'k')
-						gpl.plotErrData(np.round(stressVals), np.round(accuracyVals), tauMean,
+						pg.plotErrData(np.round(stressVals), np.round(accuracyVals), tauMean,
 							'ro-', 'on', 'Information depths in um', 'Residual stresses in MPa',
 							'Residual stresses ' + stressName)
 					else:
-						gpl.plotData(np.round(stressVals), tauMean, 'rp-', 'on', 'Information depths in um',
+						pg.plotData(np.round(stressVals), tauMean, 'rp-', 'on', 'Information depths in um',
 							'Residual stresses in MPa', 'Residual stresses ' + stressName)
 
 
@@ -248,21 +248,21 @@ def plotStrainFreeLatticeSpacing(data, showErr=True):
 	aStarVals = data['dStar100']
 	if showErr:
 		aStarErrVals = data['dStar100Err']
-		# gpl.plotErrData(aStarVals, aStarErrVals, tauMean, 'ro-', 'on', 'Information depths in um',
+		# pg.plotErrData(aStarVals, aStarErrVals, tauMean, 'ro-', 'on', 'Information depths in um',
 		# 	'a* in nm', 'k')
-		gpl.plotErrData(aStarVals, aStarErrVals, tauMean, 'ro-', 'on', 'Information depths in um',
+		pg.plotErrData(aStarVals, aStarErrVals, tauMean, 'ro-', 'on', 'Information depths in um',
 			'a* in nm')
 	else:
-		gpl.plotData(aStarVals, tauMean, 'ro-', 'on', 'Information depths in um', 'a* in nm')
+		pg.plotData(aStarVals, tauMean, 'ro-', 'on', 'Information depths in um', 'a* in nm')
 
 
 def plotInverseLaplaceResults(tauVals, stressVals, tauStresses, zStresses, zVals=None, stressValsErr=None, title=None):
-	h = gpl.figure(7.2, 4.6)
+	h = pg.figure(7.2, 4.6)
 	if stressValsErr is None:
 		plt.plot(tauVals, stressVals, 'r*')
 	else:
-		gpl.plotErrData(stressVals, stressValsErr, tauVals, 'r*', 'on')
-		#gpl.plotErrData(stressVals, stressValsErr, tauVals, 'r*', 'on', ecol='k')
+		pg.plotErrData(stressVals, stressValsErr, tauVals, 'r*', 'on')
+		#pg.plotErrData(stressVals, stressValsErr, tauVals, 'r*', 'on', ecol='k')
 	plt.plot(tauVals, tauStresses, 'r-')
 	if zVals is None:
 		plt.plot(tauVals, zStresses, 'bo-')

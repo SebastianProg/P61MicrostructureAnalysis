@@ -1,6 +1,6 @@
 import numpy as np
 
-import BasicFunctions.generalCalculations as gc
+import basics.calculations as bc
 
 
 def hklroot(h, k, l):
@@ -13,7 +13,7 @@ def hklroot2(hkl):
 
 
 def angles2latticeDists(angles, wavelength):
-	return wavelength / (2 * gc.sind(angles / 2))
+	return wavelength / (2 * bc.sind(angles / 2))
 
 
 def wavelengths2energies(wavelengths):
@@ -29,16 +29,16 @@ def energies2wavelengths(energies):
 
 
 def energies2latticeDists(energies, diffAngle):
-	return energies2wavelengths(energies) / (2 * gc.sind(diffAngle / 2))  # nm
+	return energies2wavelengths(energies) / (2 * bc.sind(diffAngle / 2))  # nm
 
 
 def latticeDists2energies(latticeDists, diffAngle):
 	# wavelengths2energies can be also used for lattice distances
-	return wavelengths2energies(latticeDists) / (2 * gc.sind(diffAngle / 2))  # keV
+	return wavelengths2energies(latticeDists) / (2 * bc.sind(diffAngle / 2))  # keV
 
 
 def latticeDists2angles(latticeDists, wavelength):
-	angles = 2 * gc.asind(wavelength / (2 * latticeDists))
+	angles = 2 * bc.asind(wavelength / (2 * latticeDists))
 	useful = np.nonzero(np.imag(angles) == 0)
 	return angles, useful
 

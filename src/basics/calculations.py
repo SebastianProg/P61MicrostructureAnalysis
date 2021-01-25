@@ -1,7 +1,7 @@
 import numpy as np
 import decimal as dec
 
-import BasicFunctions.generalFunctions as gf
+import basics.functions as bf
 
 
 def sind(x):
@@ -81,14 +81,14 @@ def transfInterval(x, a=None, b=None, c=0, d=1):
 
 def createWeightedData(x, y, a):
 	# check dimensions of values
-	if gf.size(x, 0) != gf.size(y, 0) or gf.size(x, 1) != gf.size(y, 1):
-		if gf.size(x, 0) == gf.size(a, 0) and gf.size(x, 1) == gf.size(a, 1):
+	if bf.size(x, 0) != bf.size(y, 0) or bf.size(x, 1) != bf.size(y, 1):
+		if bf.size(x, 0) == bf.size(a, 0) and bf.size(x, 1) == bf.size(a, 1):
 			# try to transpose data
-			if gf.size(x, 0) == gf.size(np.transpose(y), 0) and gf.size(x, 1) == gf.size(np.transpose(y), 1):
+			if bf.size(x, 0) == bf.size(np.transpose(y), 0) and bf.size(x, 1) == bf.size(np.transpose(y), 1):
 				y = np.transpose(y)
-		elif gf.size(y, 0) == gf.size(a, 0) and gf.size(y, 1) == gf.size(a, 1):
+		elif bf.size(y, 0) == bf.size(a, 0) and bf.size(y, 1) == bf.size(a, 1):
 			# try to transpose data
-			if gf.size(x, 0) == gf.size(np.transpose(y), 0) and gf.size(x, 1) == gf.size(np.transpose(y), 1):
+			if bf.size(x, 0) == bf.size(np.transpose(y), 0) and bf.size(x, 1) == bf.size(np.transpose(y), 1):
 				y = np.transpose(y)
 				a = np.transpose(a)
 	# check validity of weigths
@@ -97,8 +97,8 @@ def createWeightedData(x, y, a):
 	minA = np.min(a)
 	weights = np.ceil(a / minA)
 	n = int(np.sum(weights))
-	xNew = gf.ones(n)
-	yNew = gf.ones(n)
+	xNew = bf.ones(n)
+	yNew = bf.ones(n)
 	pos = 0
 	for i in range(len(weights)):
 		xNew[pos:pos + int(weights[i])] = x[i]
