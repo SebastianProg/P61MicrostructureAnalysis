@@ -114,7 +114,7 @@ def plotSin2Psi(data, showErr=True):
 	if mVals[5] != 0 or bVals[5] != 0:  # mean
 		xMean = data['xMean']
 		if showErr:
-			# plt.errorbar(sinpsi2[used], valsAll[used, 0], valsAll[used, 0] * valsAll[used, 1],
+			# plt.errorbar(xMean, valsAll[:, 0], valsAll[:, 0] * valsAll[:, 1],
 			# fmt=colors[4] + symbols[4], ecolor='k')
 			plt.errorbar(xMean, valsAll[:, 0], valsAll[:, 0] * valsAll[:, 1], fmt=colors[4] + symbols[4],
 				label='mean values')
@@ -155,7 +155,7 @@ def plotSin2Psi(data, showErr=True):
 	# plt.vlines(bf.ones(2, 1) * sinpsi2Star, np.min(dVals), np.max(dVals), 'k', 'dashed')
 	plt.grid()
 	plt.xlabel('sin^2 psi')
-	plt.ylabel('d [nm]')
+	plt.ylabel('d in nm')
 	plt.legend()
 	plt.title('sin^2 psi curve for (' + str(hklVal) + ') peak')
 	plt.tight_layout()  # layout without overlapping

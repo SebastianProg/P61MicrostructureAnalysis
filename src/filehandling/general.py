@@ -9,6 +9,7 @@ import tkinter
 from tkinter import filedialog
 import numpy as np
 import os
+import errno
 import nexusformat.nexus as nxs
 
 import basics.functions as bf
@@ -48,11 +49,13 @@ def requestFiles(fileType=(("All files", "*.*"),), dialogTitle="", multiselect="
 			dialogTitle = "Select file"
 	# request file(s)
 	root = tkinter.Tk()
+	root.wm_attributes('-topmost', True)  # show dialog in front of all
 	root.withdraw()
 	if multiselect == "on":
-		return filedialog.askopenfilenames(initialdir=folder, title=dialogTitle, filetypes=fileType)
+		return filedialog.askopenfilenames(initialdir=folder, title=dialogTitle, filetypes=fileType, parent=root)
 	else:
-		return (filedialog.askopenfilename(initialdir=folder, title=dialogTitle, filetypes=fileType),)  # put single file into tupel
+		# put single file into tuple
+		return (filedialog.askopenfilename(initialdir=folder, title=dialogTitle, filetypes=fileType, parent=root),)
 
 
 def requestFiles2(fileType=(("All files", "*.*"),), dialogTitle="", multiselect="on", folder="/"):
@@ -74,7 +77,19 @@ def requestSaveFile(fileType=(("All files", "*.*"),), dialogTitle="", folder="/"
 
 
 def requestDirectory(parentWindow=None, dialogTitle="Select a folder:", folder=os.getcwd()):
-	return filedialog.askdirectory(parent=parentWindow,initialdir=folder,title=dialogTitle)
+	return filedialog.askdirectory(parent=parentWindow, initialdir=folder, title=dialogTitle)
+
+
+def openFile(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
+	if not os.path.exists(os.path.dirname(file)):
+		try:
+			os.makedirs(os.path.dirname(file))
+		except OSError as exc:  # guard against race condition
+			if exc.errno != errno.EEXIST:
+				raise
+	# with open(file, "w") as f:
+	# 	f.write("TEST")
+	return open(file, mode, buffering, encoding, errors, newline, closefd, opener)
 
 
 def writeLine(fileId, data):
@@ -96,7 +111,7 @@ def dlmread(file, delim="\t", skipRows=0, usedCols=None, maxRows=None, commentSt
 
 def dlmwrite(file, data, delim="\t", newln=bf.newlineChar(), head="", foot="", commentStr="", append="off", format="%.18e"):
 	if append == "on":
-		fid = open(file,'ab')
+		fid = open(file, 'ab')
 		np.savetxt(fid, data, fmt=format, delimiter=delim, newline=newln, header=head, footer=foot, comments=commentStr)
 		fid.close()
 	else:
