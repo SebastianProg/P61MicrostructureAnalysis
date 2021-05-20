@@ -63,7 +63,7 @@ def lenArray(vals):
 
 
 def length(x):
-	return max(size(x,0), size(x,1))[0]
+	return max(size(x, 0), size(x, 1))[0]
 
 
 def createRange(start=0, step=0.1, stop=1):
@@ -98,6 +98,12 @@ def meshdata(xvals, yvals, zvals, cvals=None, mvals=None):
 			return xout, yout, zout, cout
 		else:
 			return xout, yout, zout, mout
+
+
+def strrepAll(origStr, oldSubstr, newSubstr):
+	strVal = origStr
+	for i in range(len(oldSubstr)):
+		return strVal.replace(oldSubstr[i], newSubstr)
 
 
 def replace(source, old, new=""):
@@ -275,6 +281,13 @@ def combineListsOrTuples(items1, items2):
 	return items1 + items2
 
 
+def setdict2(dict, key1, key2, value):
+	if key1 in dict.keys():
+		dict[key1][key2] = value
+	else:
+		dict[key1] = {key2: value}
+
+
 def combineDictionaries(dict1, dict2):
 	extendDictionary(dict1, dict2)
 	return dict1
@@ -300,7 +313,7 @@ def dict2matrix(dict, keyList=None):
 	else:
 		matrix = np.zeros((len(dict[keyList[0]]), len(keyList)))
 		for i in range(len(keyList)):
-			matrix[:,i] = dict[keyList[i]]
+			matrix[:, i] = dict[keyList[i]]
 		return matrix
 
 
@@ -315,12 +328,16 @@ def matrix2dict(matrix, keyList):
 	return dictMatrix
 
 
-def stringList2string(strList, delim=''):
-	if len(delim) > 0:
-		[strList.insert(i*2, delim) for i in range(len(strList))]
-		return ''.join(strList[1:])
+def stringList2string(strList, delim='', inplace=False):
+	if inplace:
+		resList = strList
 	else:
-		return ''.join(strList)
+		resList = strList.copy()
+	if len(delim) > 0:
+		[resList.insert(i*2, delim) for i in range(len(resList))]
+		return ''.join(resList[1:])
+	else:
+		return ''.join(resList)
 
 
 def array2str(array, sep=' '):

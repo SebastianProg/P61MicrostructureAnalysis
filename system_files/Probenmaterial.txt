@@ -1,0 +1,27 @@
+﻿Test	0	test.txt
+Fe (alpha)	0.28665	DEC_AlphaFerritBESSY.txt
+CrNi-Stahl (18% Cr, 12% Ni)	0.35909	CrNiStahl.txt
+Cr	0.28847	Cr.txt
+W	0.31653	W.txt
+Al	0.40497	Al.txt
+AlZn6MgCu (warmausgehaertet T65)	0.40549	AlZn6MgCu.txt
+Cu	0.36148	Cu.txt
+CuZn37	0.3693	CuZn37.txt
+CuZn47	0.2937	CuZn47.txt
+Ni	0.35239	Ni.txt
+NiCr20Co10	0.3518	NiCr20Co10.txt
+alpha - Co	0.25054	alpha - Co.txt
+CoCr20Mo10	0.359	CoCr20Mo10.txt
+alpha - Titan	0.29512	alpha - Titan.txt
+Mg	0.32094	Mg.txt
+TiC	0.43270	TiC.txt
+TiN	0.4240	TiN.txt
+alpha-Al2O3	0.47589	alpha-Al2O3.txt
+SiC	0.4349	SiC.txt
+beta -Si3N4	0.76044	beta -Si3N4.txt
+SiC 2H	0.30763	SiC 2H.txt
+SiC 4H	0.3073	SiC 4H.txt
+SiC 6H	0.30806	SiC 6H.txt
+WC-Phase von Hartmetall	0.29063	WC-Phase von Hartmetall.txt
+ZrO2 + 8 Mol - % Y2O3	0.5134	ZrO2 + 8 Mol - % Y2O3.txt
+ZrO2 + 3 Mol - % Y2O3	0.510	ZrO2 + 3 Mol - % Y2O3.txt

@@ -7,7 +7,9 @@ Created on Sun Mar 17 22:53:13 2019
 
 from io import StringIO  # for handling unicode strings
 import numpy as np
+import pandas as pd
 import os
+import re
 
 import basics.functions as bf
 import filehandling.general as fg
@@ -99,8 +101,6 @@ def accumSpectra(resFile='', files=None, method='sum', dataDelim='\t', headerLin
 			else:
 				writeSpectrumFile(resFile, results)
 	return results, header, files
-
-
 
 
 def getDecVals(decFile, hklVals=None):
@@ -309,3 +309,28 @@ def multiUniversalPlotS33Results(data):
 			'dStar100': dStarVals[i], 'dStar100Err': dStarErrVals[i], 's33': stresses[i],
 			'dev_s33': accuracy[i]}))
 	return text.getvalue()
+
+def read_fio(fn):
+	with open(fn, 'r') as f:
+		frl = f.readlines()
+		header_re = re.compile(r'\s+Col\s+(?P<col_idx>\d+)\s+(?P<col_name>\S+)\s+(?P<type>\S+)\n')
+		skip_rows = 0
+		# skip_footer = 1  # if there is one extra line at the end
+		skip_footer = 0
+		fix_axes = dict()
+		col_names = dict()
+		for ii, line in enumerate(frl):
+			md = header_re.match(line)
+			if md is not None:
+				md = md.groupdict()
+				col_names[int(md['col_idx'])] = md['col_name']
+				# print(md)
+				skip_rows = ii
+			elif '=' in line:
+				lineparts = line.split(' = ')
+				fix_axes[lineparts[0].strip()] = float(lineparts[1].strip())
+		f.seek(0, 0)
+		result = pd.read_csv(f, sep=' ', skiprows=skip_rows + 1, header=None,
+			skipinitialspace=True, skipfooter=skip_footer, engine='python')
+		result = result.rename(columns={k - 1: col_names[k] for k in col_names})
+	return result, fix_axes
