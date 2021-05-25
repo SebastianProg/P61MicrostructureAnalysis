@@ -7,31 +7,52 @@ import filehandling.specific as fs
 
 
 # Fio file processing for ROI analysis
-fileNames = fg.requestFiles((("Fio files", '*.fio'),), 'Motorpositionsdateien auswaehlen', 'on')
+fileNames = fg.requestFiles((("Fio files", '*.fio'),), 'Select motor positions files', 'on')
 for i in range(len(fileNames)):
     fioData = fs.read_fio(fileNames[i])
     fg.dlmwrite(bf.replace(fileNames[i], '.fio', '_roi.txt'), fioData.values,
         head=bf.stringList2string(list(fioData.columns), '\t'), format='%f')
 
-# header for position files: om eta tth0 tth1 psi0 psi1 phi x y z
-header = ['om', 'eta', 'tth0', 'tth1', 'psi0', 'psi1', 'phi', 'x', 'y', 'z']
+# header for position files: om eta tth0 tth1 psi0 psi1 phi x y z petracurrent
+header = ['om', 'eta', 'tth0', 'tth1', 'psi0', 'psi1', 'phi', 'x', 'y', 'z', 'petraCur']
 headLine = bf.stringList2string(header, '\t')
 
-# Fio file processing for residual stress analysis
+# Fio file processing for residual stress analysis and texture analysis
 # phioffset = 45
 phioffset = 0
-fileNames = fg.requestFiles((("Fio files", '*.fio'),), 'Motorpositionsdateien auswaehlen', 'on')
+fileNames = fg.requestFiles((("Fio files", '*.fio'),), 'Select motor positions files', 'on')
 for i in range(len(fileNames)):
     scanData, fixData = fs.read_fio(fileNames[i])
-    motVals = np.zeros((scanData.shape[0], 10))
+    motVals = np.zeros((scanData.shape[0], len(header)))
+    # set constant values
+    if 'eu.omg' in fixData.keys():
+        motVals[:, 0] = fixData['eu.omg']
+    if 'eu.eta' in fixData.keys():
+        motVals[:, 1] = fixData['eu.eta']
+    if 'eu.chi' in fixData.keys():
+        motVals[:, 4] = -90 + fixData['eu.chi']
+        motVals[:, 5] = fixData['eu.chi']
+    if 'eu.phi' in fixData.keys():
+        motVals[:, 6] = fixData['eu.phi'] - phioffset
+    if 'eu.x' in fixData.keys():
+        motVals[:, 7] = fixData['eu.x']
+    if 'eu.y' in fixData.keys():
+        motVals[:, 8] = fixData['eu.y']
+    if 'eu.z' in fixData.keys():
+        motVals[:, 9] = fixData['eu.z']
+    if 'petracurrent' in fixData.keys():
+        motVals[:, 10] = fixData['petracurrent']
+    # set user determined values -> tth values
+    # motVals[:, 2] = 15
+    # motVals[:, 3] = 6.785
+    motVals[:, 2] = 9.72
+    # motVals[:, 3] = 10.23
+    motVals[:, 3] = 6.225
+    # set variable values
     if 'eu.omg' in scanData.columns:
         motVals[:, 0] = np.array(scanData['eu.omg'])
     if 'eu.eta' in scanData.columns:
         motVals[:, 1] = np.array(scanData['eu.eta'])
-    # motVals[:, 2] = 15
-    # motVals[:, 3] = 6.785
-    motVals[:, 2] = 9.72
-    motVals[:, 3] = 10.23
     if 'eu.chi' in scanData.columns:
         motVals[:, 4] = -90 + np.array(scanData['eu.chi'])
         motVals[:, 5] = np.array(scanData['eu.chi'])
@@ -43,6 +64,9 @@ for i in range(len(fileNames)):
         motVals[:, 8] = np.array(scanData['eu.y'])
     if 'eu.z' in scanData.columns:
         motVals[:, 9] = np.array(scanData['eu.z'])
+    if 'petracurrent' in scanData.columns:
+        motVals[:, 10] = np.array(scanData['petracurrent'])
+    # export new text file
     fg.dlmwrite(bf.replace(fileNames[i], '.fio', '.txt'), motVals, head=headLine, format='%f')
 
 # split motor positions files into separate ones according to one axis (e. g. different measurement points)

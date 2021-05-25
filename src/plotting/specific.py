@@ -55,15 +55,17 @@ def changeStereoProjPlot(plotObj, phi, psi, int=None, maxPsi=90):
 # This function gets a spectrum plot (over energy, lattice distances,
 # diffraction angles) and adds lines of specified peak positions (can be
 # fluorescence or diffraction peaks)
-def plotPeakPositions1(x, y, peakPositions=None, peakNames=None, lineCol='r', adaptPosY=True, peakRange=[0.99, 1.01]):
+def plotPeakPositions1(x, y, peakPositions=None, peakNames=None, lineCol='r', adaptPosY=True, plotLines=True,
+		verticaltext=False, peakRange=[0.99, 1.01]):
 	h = plt.figure()
-	plt.plot(x, y, 'k.-')
+	plt.plot(x, y, 'k-')
 	maxVal = max(y)
 	if peakPositions is not None:
 		# select only positions inside data range
 		peakNames = peakNames[peakPositions <= max(x)]
 		peakPositions = peakPositions[peakPositions <= max(x)]
-		plt.vlines([peakPositions, peakPositions], 0, maxVal, lineCol)
+		if plotLines:
+			plt.vlines([peakPositions, peakPositions], 0, maxVal, lineCol)
 		if peakNames is not None:
 			for i in range(len(peakPositions)):
 				if peakNames[i]:
@@ -72,7 +74,12 @@ def plotPeakPositions1(x, y, peakPositions=None, peakNames=None, lineCol='r', ad
 					relVals = (x >= peakRange[0] * peakPositions[i]) & (x <= peakRange[1] * peakPositions[i])
 					maxVal = 1.01 * max(y[relVals])
 					# plt.vlines([peakPositions[i], peakPositions[i]], 0, maxVal, lineCol)
-				plt.text(peakPositions[i], maxVal, peakNames[i])
+				if verticaltext:
+					plt.text(peakPositions[i], maxVal, peakNames[i], rotation='vertical')
+					# plt.text(peakPositions[i] - 1, maxVal + 500, peakNames[i], rotation='vertical')
+				else:
+					plt.text(peakPositions[i], maxVal, peakNames[i])
+					# plt.text(peakPositions[i] - 1, maxVal, peakNames[i])
 	plt.grid(True)
 	plt.show()
 

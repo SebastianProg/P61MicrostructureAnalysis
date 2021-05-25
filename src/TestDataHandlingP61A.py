@@ -87,3 +87,33 @@ if plotResUvp:
 fg.export(fs.universalplotHeader() + fs.universalPlotResults(resDataUvp))
 fg.export(fs.universalplotS33Header() + fs.multiUniversalPlotS33Results(resDataS33))
 
+# import result files of multi wavelength analysis and plot the results
+plotResMwl = True
+fileNames = fg.requestFiles((("text files", "*.txt"), ("all files", "*.*")), "Select MWL result file", "off")
+allData = fg.dlmread(fileNames[0], '\t', 1)
+resDataMwl = {'hklList': allData[:, 0], 's1Dec': None, 'hs2Dec': None,
+	'tauMean': allData[:, 1], 'dStar100': allData[:, 2], 'stresses': allData[:, 4:15:2],
+	'accuracy': allData[:, 5:16:2], 'integralWidth': allData[:, 16:22]}
+# plot the results
+if plotResMwl:
+	ps.plotMultiWavelength(plotDataMwl, showErr)
+	#ps.plotIntegralWidth(resDataMwl, showErr)
+	ps.plotStrainFreeLatticeSpacing(resDataMwl, showErr)
+	ps.plotStresses(resDataMwl, showErr)
+
+# import result files of universal plot analysis and plot the results
+plotResUvp = True
+fileNames = fg.requestFiles((("text files", "*.txt"), ("all files", "*.*")), "Select UVP result file", "off")
+allData = fg.dlmread(fileNames[0], '\t', 1)
+resDataUvp = {'tauVals': allData[:, 0], 'stresses': allData[:, 1:9:2], 'accuracy': allData[:, 2:10:2],
+	'hklList': allData[:, 9], 'psiVals': allData[:, 10]}
+fileNames = fg.requestFiles((("text files", "*.txt"), ("all files", "*.*")), "Select UVP-s33 result file", "off")
+allData = fg.dlmread(fileNames[0], '\t', 1)
+resDataS33 = {'tauMean': allData[:, 0], 'aStarVals': allData[:, 1], 'dStar100': allData[:, 2],
+	'stresses': allData[:, 3], 'accuracy': allData[:, 4], 'hklList': allData[:, 5]}
+# plot the results
+if plotResUvp:
+	ps.plotUniversalPlot(resDataUvp, showErr)
+	#ps.plotMultiUniversalPlot(resDataUvp, showErr)
+	ps.plotStrainFreeLatticeSpacing(resDataS33, showErr)
+	ps.plotStresses(resDataS33, showErr)

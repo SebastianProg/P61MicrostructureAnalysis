@@ -310,6 +310,262 @@ def multiUniversalPlotS33Results(data):
 			'dev_s33': accuracy[i]}))
 	return text.getvalue()
 
+
+def initFinalFileSettings(*args):
+	# default values
+	settings = {"type": "H4_1", "unused": np.array([1, 2]), "energy": 0, "anode": "",
+		"pars": np.array([])}  # 'EDDI', 'ED', 'AD', 'Seifert', 'SeifertM', 'H4_1', 'H4_2', 'P61_0' or 'P61_1'
+	if len(args) % 2 == 0:
+		# set specified values
+		for i in range(0, len(args), 2):
+			if bf.hasKey(settings, args[i]):  # adding new entries is currently not allowed
+				settings[args[i]] = args[i + 1]
+	elif len(args) == 1:
+		# file with settings is specified
+		lines = fg.readLines(args[0])
+		for line in lines:
+			lineData = line.split('\t')
+			if lineData[1].startswith('['):
+				settings[lineData[0]] = bf.strArray2npArray(lineData[1])
+			else:
+				settings[lineData[0]] = eval(lineData[1])
+	return settings
+
+
+# generate new file with axes positions and peak information (HZB format)
+# type of measurement 'ED' or 'AD'
+def createPeakMeasurementFile(settings, fileNamesAxes=None, fileNamesPeaks=None, resFile=None):
+	# header of new file
+	fileHead = ['LNr', 'dVal[nm]', 'dVar[nm]', 'Iint', 'Integralb', 'tth', 'phiP', 'psiP', 'etaP',
+		'Ringstr', 'RT', 'DT', 'xdiff', 'ydiff', 'zdiff', 'motor1', 'motor2', 'motor3',
+		'temp1', 'temp2', 'wavelength', 'deltatime']
+	# select files
+	if fileNamesAxes is None or len(fileNamesAxes) == 0:
+		multiSel = 'on'
+		fileNamesAxes = fg.requestFiles((('Text file', '*.txt'),), 'Achspositionsdateien auswaehlen', multiSel)
+	if fileNamesPeaks is None or len(fileNamesPeaks) == 0:
+		fileNamesPeaks = fg.requestFiles((('Text file', '*.txt'),), 'Auswertedateien auswaehlen', "on")
+	if fileNamesAxes is not None and len(fileNamesAxes) != 0:
+		if resFile is None or len(resFile) == 0:
+			# specify name of result file
+			if len(fileNamesAxes) == 1 and fileNamesAxes[0].find('_positions.txt') > 0:
+				resFile = bf.replace(fileNamesAxes[0], '_positions.txt', '_finalData.txt')
+			elif len(fileNamesAxes) == 1 and fileNamesAxes[0].find('_pos.txt') > 0:
+				resFile = bf.replace(fileNamesAxes[0], '_pos.txt', '_finalData.txt')
+			elif len(fileNamesAxes) == 1:
+				resFile = bf.replace(fileNamesAxes[0], '.txt', '_finalData.txt')
+			else:
+				pathName, file = fg.fileparts(fileNamesAxes[0])
+				resFile = pathName + '/finalData.txt'
+			if settings['type'] == 'P61_0':
+				resFile = resFile.replace('.txt', '0.txt')
+			elif settings['type'] == 'H4_1' or settings['type'] == 'P61_1':
+				resFile = resFile.replace('.txt', '1.txt')
+			elif settings['type'] == 'H4_2':
+				resFile = resFile.replace('.txt', '2.txt')
+		axesFiles = len(fileNamesAxes)
+		peakFiles = len(fileNamesPeaks)
+		# read data from axes files
+		dataAxes = []
+		for i in range(axesFiles):
+			dataAxes.append(fg.dlmread(fileNamesAxes[i], '\t', 1))
+		dataAxes = np.array(dataAxes)
+		# read data from peak files
+		dataPeaks = []
+		for i in range(peakFiles):
+			dataPeaks.append(fg.dlmread(fileNamesPeaks[i], '\t', 1))
+		dataPeaks = np.array(dataPeaks)
+		if len(bf.size(dataPeaks[0])) == 1:
+			peakCount = bf.min(bf.size(dataPeaks[0], 0), bf.size(dataPeaks[0], 1))[0]  # peakFiles
+		else:
+			peakCount = bf.size(dataPeaks[0], 0)
+		peaks = np.setdiff1d(range(0, peakCount), settings['unused'] - 1)  # function needs zero based unused values
+		# create new data set
+		lineCount = peakFiles * len(peaks)
+		data = np.zeros((lineCount, 22))
+		curAxesFile = 0
+		curAxesLine = 0
+		peakNum = 1
+		for i in peaks:
+			for j in range(peakFiles):
+				curLine = (peakNum - 1) * peakFiles + j
+				data[curLine, 0] = peakNum # peak number
+				# angle dispersive data measured at own laboratory devices (roh, xrdml and uxd file format)
+				if settings['type'] == 'AD':
+					if len(bf.size(dataPeaks)) < 3:
+						data[curLine, 5] = dataPeaks[j, 4]  # ttheta
+					else:
+						data[curLine, 5] = dataPeaks[j][i, 4]  # ttheta
+					data[curLine, 6] = dataAxes[curAxesFile][curAxesLine, 2]  # phi
+					data[curLine, 7] = dataAxes[curAxesFile][curAxesLine, 1]  # psi
+					data[curLine, 8] = 90  # eta
+					data[curLine, 9] = 45  # current
+					data[curLine, 10] = dataAxes[curAxesFile][curAxesLine, 7]  # real time
+					data[curLine, 12] = dataAxes[curAxesFile][curAxesLine, 3]  # x axis
+					data[curLine, 13] = dataAxes[curAxesFile][curAxesLine, 4]  # y axis
+					data[curLine, 14] = dataAxes[curAxesFile][curAxesLine, 5]  # z axis
+					data[curLine, 20] = settings['pars']  # wavelength
+					data[curLine, 1] = conv.angles2latticeDists(data[curLine, 5], data[curLine, 20])  # peak value
+					if len(bf.size(dataPeaks)) < 3:
+						data[curLine, 2] = data[curLine, 1] - conv.angles2latticeDists(data[curLine, 5] +
+							dataPeaks[j, 7], data[curLine, 20])  # peak deviation
+						data[curLine, 3] = dataPeaks[j, 5]  # peak intensity
+						data[curLine, 4] = (2 * np.pi) ** 0.5 * dataPeaks[j, 3]  # peak IB [°]
+					else:
+						data[curLine, 2] = data[curLine, 1] - conv.angles2latticeDists(data[curLine, 5] +
+							dataPeaks[j][i, 7], data[curLine, 20])  # peak deviation
+						data[curLine, 3] = dataPeaks[j][i, 5]  # peak intensity
+						data[curLine, 4] = (2 * np.pi)**0.5 * dataPeaks[j][i, 3]  # peak IB [°]
+				# Seifert measurement data
+				elif len(settings['type']) > 6 and settings['type'][0:6] == 'Seifert':
+					data[curLine, 5] = dataPeaks[j][i, 4]  # ttheta
+					data[curLine, 6] = dataAxes[curAxesFile][curAxesLine, 4]  # phi
+					if data[curLine, 6] != 0 or data[curLine, 6] != 90 or data[curLine, 6] != 180 or data[curLine, 6] != 270:
+						data[curLine, 6] = 0
+					data[curLine, 7] = dataAxes[curAxesFile][curAxesLine, 3]  # psi
+					if settings['type'] == 'SeifertM':  # omega measurement
+						data[curLine, 8] = 0  # eta
+					else:
+						data[curLine, 8] = 90  # eta
+					data[curLine, 9] = 45  # current
+					data[curLine, 10] = dataAxes[curAxesFile][curAxesLine, 14]  # real time
+					data[curLine, 12] = dataAxes[curAxesFile][curAxesLine, 5]  # x axis
+					data[curLine, 13] = dataAxes[curAxesFile][curAxesLine, 6]  # y axis
+					data[curLine, 14] = dataAxes[curAxesFile][curAxesLine, 7]  # z axis
+					data[curLine, 20] = settings['pars']  # wavelength
+					data[curLine, 1] = conv.angles2latticeDists(data[curLine, 5], data[curLine, 20])  # peak value
+					data[curLine, 2] = data[curLine, 1] - conv.angles2latticeDists(data[curLine, 5] +
+						dataPeaks[j][i, 7], data[curLine, 20])  # peak deviation
+					data[curLine, 3] = dataPeaks[j][i, 5]  # peak intensity
+					data[curLine, 4] = (2 * np.pi) ** 0.5 * dataPeaks[j][i, 3]  # peak IB [°]
+				elif settings['type'] == 'ED' or settings['type'][0:2] == 'H4' or settings['type'][0:3] == 'P61':
+					if settings['type'][0:2] == 'H4':
+						data[curLine, 5] = settings['tth']
+						data[curLine, 6] = dataAxes[curAxesFile][curAxesLine, 5]  # phi
+						data[curLine, 7] = dataAxes[curAxesFile][curAxesLine, 4]  # psi
+						data[curLine, 8] = 90  # eta
+						data[curLine, 9] = 45  # current
+						# real time
+						# dead time
+						data[curLine, 12] = dataAxes[curAxesFile][curAxesLine, 6]  # x axis
+						data[curLine, 13] = dataAxes[curAxesFile][curAxesLine, 7]  # y axis
+						data[curLine, 14] = dataAxes[curAxesFile][curAxesLine, 8]  # z axis
+					elif settings['type'][0:3] == 'P61':
+						if settings['type'] == 'P61_0':
+							data[curLine, 5] = dataAxes[curAxesFile][curAxesLine, 2]  # ttheta
+							data[curLine, 7] = dataAxes[curAxesFile][curAxesLine, 4]  # psi
+						elif settings['type'] == 'P61_1':
+							data[curLine, 5] = dataAxes[curAxesFile][curAxesLine, 3]  # ttheta
+							data[curLine, 7] = dataAxes[curAxesFile][curAxesLine, 5]  # psi
+						data[curLine, 6] = dataAxes[curAxesFile][curAxesLine, 6]  # phi
+						data[curLine, 8] = 90  # eta
+						data[curLine, 9] = 100  # current
+						# real time
+						# dead time
+						data[curLine, 12] = dataAxes[curAxesFile][curAxesLine, 7]  # x
+						data[curLine, 13] = dataAxes[curAxesFile][curAxesLine, 8]  # y
+						data[curLine, 14] = dataAxes[curAxesFile][curAxesLine, 9]  # z
+					elif settings['type'] == 'ED':
+						data[curLine, 5] = dataAxes[curAxesFile][curAxesLine, 1] + dataAxes[curAxesFile][curAxesLine, 2]  # ttheta
+						data[curLine, 6] = dataAxes[curAxesFile][curAxesLine, 4]  # phi
+						data[curLine, 7] = dataAxes[curAxesFile][curAxesLine, 3]  # psi
+						data[curLine, 8] = 90  # eta
+						data[curLine, 9] = 45  # current
+						data[curLine, 10] = dataAxes[curAxesFile][curAxesLine, 14]  # real time
+						# dead time
+						data[curLine, 12] = dataAxes[curAxesFile][curAxesLine, 5]  # x axis
+						data[curLine, 13] = dataAxes[curAxesFile][curAxesLine, 6]  # y axis
+						data[curLine, 14] = dataAxes[curAxesFile][curAxesLine, 7]  # z axis
+					if len(settings['pars']) == 0:
+						data[curLine, 1] = conv.energies2latticeDists(dataPeaks[j][i, 4], data[curLine, 5])  # peak value
+						data[curLine, 2] = data[curLine, 1] - conv.energies2latticeDists(dataPeaks[j][i, 4] +
+							dataPeaks[j][i, 7] / dataPeaks[j][i, 2], data[curLine, 5])  # peak deviation
+						data[curLine, 4] = (2 * np.pi) ** 0.5 * dataPeaks[j][i, 3]  # peak IB [keV]
+					else:
+						data[curLine, 1] = conv.energies2latticeDists(conv.channels2energies(dataPeaks[j][i, 4],
+							settings['pars']), data[curLine, 5])  # peak value
+						data[curLine, 2] = data[curLine, 1] - conv.energies2latticeDists(conv.channels2energies(dataPeaks[j][i, 4]
+							+ dataPeaks[j][i, 7] / dataPeaks[j][i, 2], settings['pars']), data[curLine, 5])  # peak deviation
+						data[curLine, 4] = (2 * np.pi) ** 0.5 * dataPeaks[j][i, 3]  # peak IB [keV]
+					data[curLine, 3] = dataPeaks[j][i, 5]  # peak intensity
+					if settings['type'][0:2] == 'P61':
+						data[curLine, 2] = 1 / data[curLine, 3]  # error weight as intensity
+				# ED data in general
+				elif settings['type'] == 'ED':
+					data[curLine, 5] = dataAxes[curAxesFile][curAxesLine, 1] + dataAxes[curAxesFile][curAxesLine, 1]  # ttheta
+					data[curLine, 6] = dataAxes[curAxesFile][curAxesLine, 4]  # phi
+					data[curLine, 7] = dataAxes[curAxesFile][curAxesLine, 3]  # psi
+					data[curLine, 8] = 90  # eta
+					data[curLine, 9] = 45  # current
+					data[curLine, 10] = dataAxes[curAxesFile][curAxesLine, 14]  # real time
+					# dead time
+					data[curLine, 12] = dataAxes[curAxesFile][curAxesLine, 5]  # x axis
+					data[curLine, 13] = dataAxes[curAxesFile][curAxesLine, 6]  # y axis
+					data[curLine, 14] = dataAxes[curAxesFile][curAxesLine, 7]  # z axis
+					if settings['pars'] is None:
+						data[curLine, 1] = conv.energies2latticeDists(dataPeaks[j][i, 4], data[curLine, 5])  # peak value
+						data[curLine, 2] = data[curLine, 1] - conv.energies2latticeDists(dataPeaks[j][i, 4] +
+							dataPeaks[j][i, 7], data[curLine, 5])  # peak deviation
+						data[curLine, 4] = (2 * np.pi)**0.5 * dataPeaks[j][i, 3]  # peak IB [keV]
+					else:
+						data[curLine, 1] = conv.energies2latticeDists(conv.channels2energies(dataPeaks[j][i, 4], settings['pars']),
+							data[curLine, 5])  # peak value
+						data[curLine, 2] = dataPeaks[j][i, 4] - conv.energies2latticeDists(conv.channels2energies(dataPeaks[j][i, 4] +
+							dataPeaks[j][i, 7], settings['pars']), data[curLine, 5])  # peak deviation
+						data[curLine, 4] = (2 * np.pi)**0.5 * dataPeaks[j][i, 3]  # peak IB [keV]
+					data[curLine, 3] = dataPeaks[j][i, 5]  # peak intensity
+				# EDDI files
+				elif settings['type'] == 'EDDI':
+					data[curLine, 5] = dataAxes[curAxesFile][curAxesLine, 1]  # ttheta
+					data[curLine, 6] = dataAxes[curAxesFile][curAxesLine, 2]  # phi
+					data[curLine, 7] = dataAxes[curAxesFile][curAxesLine, 3]  # psi
+					data[curLine, 8] = dataAxes[curAxesFile][curAxesLine, 4]  # eta
+					data[curLine, 9] = dataAxes[curAxesFile][curAxesLine, 5]  # current
+					data[curLine, 10] = dataAxes[curAxesFile][curAxesLine, 6]  # real time
+					data[curLine, 11] = dataAxes[curAxesFile][curAxesLine, 7]  # dead time
+					data[curLine, 12] = dataAxes[curAxesFile][curAxesLine, 8]  # x axis
+					data[curLine, 13] = dataAxes[curAxesFile][curAxesLine, 9]  # y axis
+					data[curLine, 14] = dataAxes[curAxesFile][curAxesLine, 10]  # z axis
+					data[curLine, 15] = dataAxes[curAxesFile][curAxesLine, 11]  # motor 1
+					data[curLine, 16] = dataAxes[curAxesFile][curAxesLine, 12]  # motor 2
+					data[curLine, 17] = dataAxes[curAxesFile][curAxesLine, 13]  # motor 3
+					data[curLine, 19] = dataAxes[curAxesFile][curAxesLine, 14]  # temp 1
+					data[curLine, 19] = dataAxes[curAxesFile][curAxesLine, 15]  # temp 2
+					data[curLine, 20] = dataAxes[curAxesFile][curAxesLine, 16]  # heatrate
+					if settings['pars'] is None:
+						data[curLine, 1] = conv.energies2latticeDists(dataPeaks[j][i, 4], data[curLine, 5])  # peak value
+						data[curLine, 2] = data[curLine,1] - conv.energies2latticeDists(dataPeaks[j][i, 4] +
+							dataPeaks[j][i, 7], data[curLine, 5])  # peak deviation
+						data[curLine, 4] = (2 * np.pi)**0.5 * dataPeaks[j][i, 3]  # peak IB [keV]
+					else:
+						data[curLine, 1] = conv.energies2latticeDists(conv.channels2energies(dataPeaks[j][i, 4], settings['pars']),
+							data[curLine, 5])  # peak value
+						data[curLine, 2] = data[curLine, 1] - conv.energies2latticeDists(conv.channels2energies(dataPeaks[j][i, 4]
+							+ dataPeaks[j][i, 7], settings['pars']), data[curLine, 5])  # peak deviation
+						data[curLine, 4] = conv.channels2energies((2 * np.pi)**0.5 * dataPeaks[j][i, 3], settings['pars'])  # peak IB [keV]
+					data[curLine, 3] = dataPeaks[j][i, 5]  # peak intensity
+				# go to next measurement
+				curAxesLine = curAxesLine + 1
+				if bf.size(dataAxes[curAxesFile], 0) <= curAxesLine:
+					curAxesFile = curAxesFile + 1
+					if axesFiles <= curAxesFile:
+						curAxesFile = 0
+					curAxesLine = 0
+			peakNum = peakNum + 1
+		# write new file
+		fid = open(resFile, 'w')
+		for i in range(len(fileHead)):
+			fid.write(('%s\t' % fileHead[i]))
+		fg.writeLine(fid, '')
+		formatStr = '%.0f\t%.8f\t%.8f\t%.2f\t%.6f\t%.4f\t%.4f\t%.4f\t%.4f\t%.1f\t%.1f\t%.2f\t%.3f\t%.3f\t'\
+			+ '%.5f\t%.3f\t%.3f\t%.3f\t%.2f\t%.2f\t%.8f\t%.0f'
+		for j in range(lineCount):
+			fg.writeDataLine(fid, formatStr, data[j, :])
+		fid.close()
+		return data, resFile
+
+
+# implemented by Gleb and adapted
 def read_fio(fn):
 	with open(fn, 'r') as f:
 		frl = f.readlines()

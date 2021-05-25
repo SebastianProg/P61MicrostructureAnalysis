@@ -36,6 +36,26 @@ def initPeakfitSettings(*args):
 	return settings
 
 
+def estimate_peak_params(xx, yy, test_ind=5):
+	# test_ind defines distance to maximum value to estimate sigma parameter
+	max_ind = np.argmax(yy)
+	max_pos = xx[max_ind]
+	max_val = yy[max_ind]
+	l_sigma = 0
+	r_sigma = 0
+	if max_ind > test_ind:
+		l_sigma = np.abs(xx[max_ind - test_ind] - xx[max_ind]) / (
+				2 * (np.log(max_val) - np.log(yy[max_ind - test_ind]))) ** 0.5
+		est_sigma = l_sigma
+	if max_ind < len(xx):
+		r_sigma = np.abs(xx[max_ind + test_ind] - xx[max_ind]) / (
+					2 * (np.log(max_val) - np.log(yy[max_ind + test_ind]))) ** 0.5
+		est_sigma = r_sigma
+	if l_sigma > 0 and r_sigma > 0:
+		est_sigma = np.mean([l_sigma, r_sigma])
+	return max_val, max_pos, est_sigma
+
+
 def evalPeakData(settings, peakData, n=1):
 	# check values of settings -> error handling, default values
 	handle = -1  # handle of figure

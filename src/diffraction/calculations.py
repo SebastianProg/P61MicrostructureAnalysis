@@ -5,6 +5,7 @@ import scipy.optimize as op
 import basics.functions as bf
 import basics.calculations as bc
 import basics.datamodels as dm
+import filehandling.general as fg
 import diffraction.conversions as conv
 
 
@@ -228,19 +229,24 @@ def sin2PsiAnalysis(data, maxPsi=None):
 	sinpsi2StarSingle = s1Val / hs2Val
 	sinpsi2Star = -2 * s1Val / hs2Val
 	sinpsi2Plus = 1 + s1Val / hs2Val
+	dValsValid = (dVals > 0) & (np.isnan(dVals) == False)
+	tauValsValid = (tauVals >= 0) & (tauVals < 1e6)
+	ibValsValid = (ibVals > 0) & (ibVals < 1000)
 	if maxPsi is None:
-		tauMean = np.sum(tauVals) / len(tauVals)
+		tauMean = np.sum(tauVals[tauValsValid]) / len(tauVals[tauValsValid])
+		# tauMean = (max(tauVals[tauValsValid]) + min(tauVals[tauValsValid])) / 2
 	else:
-		curTau = tauVals[(psiVals <= maxPsi) & (psiVals >= -maxPsi)]  # take only values smaller than or equal to | maxPsi° |
+		# take only values smaller than or equal to | maxPsi° |
+		curTau = tauVals[(psiVals <= maxPsi) & (psiVals >= -maxPsi) & tauValsValid]
 		tauMean = np.sum(curTau) / len(curTau)
-	# tauMean = (max(tauVals) + min(tauVals)) / 2
-	#determine mean values of IB
+		# tauMean = (max(curTau) + min(curTau)) / 2
+	# determine mean values of IB
 	valuesIb = np.zeros(len(phiUni))
 	for j in range(len(phiUni)):
 		if maxPsi is None:
-			valuesIb[j] = np.mean(ibVals[phiVals == phiUni[j]])
+			valuesIb[j] = np.mean(ibVals[phiVals == phiUni[j] & ibValsValid])
 		else:
-			valuesIb[j] = np.mean(ibVals[(phiVals == phiUni[j]) & (psiVals <= maxPsi) & (psiVals >= -maxPsi)])
+			valuesIb[j] = np.mean(ibVals[(phiVals == phiUni[j]) & (psiVals <= maxPsi) & (psiVals >= -maxPsi) & ibValsValid])
 	# perform linear regression of all phi values
 	valsAll = np.zeros((len(psiUni), 2))
 	vals45 = np.zeros((len(psiUni), 2))
@@ -250,25 +256,25 @@ def sin2PsiAnalysis(data, maxPsi=None):
 		if bf.max(bf.containsItems(psiVals, psiUni[i])[0])[0] and bf.max(bf.containsItems(psiVals, -psiUni[i])[0])[
 			0]:
 			# positive and negative psi values
-			val0 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 0)],
-				dErrVals[(psiVals == psiUni[i]) & (phiVals == 0)]])
-			val90 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 90)],
-				dErrVals[(psiVals == psiUni[i]) & (phiVals == 90)]])
-			val180 = np.array([dVals[(psiVals == -psiUni[i]) & (phiVals == 0)],
-				dErrVals[(psiVals == -psiUni[i]) & (phiVals == 0)]])
-			val270 = np.array([dVals[(psiVals == -psiUni[i]) & (phiVals == 90)],
-				dErrVals[(psiVals == -psiUni[i]) & (phiVals == 90)]])
+			val0 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 0) & dValsValid],
+				dErrVals[(psiVals == psiUni[i]) & (phiVals == 0) & dValsValid]])
+			val90 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 90) & dValsValid],
+				dErrVals[(psiVals == psiUni[i]) & (phiVals == 90) & dValsValid]])
+			val180 = np.array([dVals[(psiVals == -psiUni[i]) & (phiVals == 0) & dValsValid],
+				dErrVals[(psiVals == -psiUni[i]) & (phiVals == 0) & dValsValid]])
+			val270 = np.array([dVals[(psiVals == -psiUni[i]) & (phiVals == 90) & dValsValid],
+				dErrVals[(psiVals == -psiUni[i]) & (phiVals == 90) & dValsValid]])
 		else:
-			val0 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 0)],
-				dErrVals[(psiVals == psiUni[i]) & (phiVals == 0)]])
-			val90 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 90)],
-				dErrVals[(psiVals == psiUni[i]) & (phiVals == 90)]])
-			val180 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 180)],
-				dErrVals[(psiVals == psiUni[i]) & (phiVals == 180)]])
-			val270 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 270)],
-				dErrVals[(psiVals == psiUni[i]) & (phiVals == 270)]])
-		val45 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 45)],
-			dErrVals[(psiVals == psiUni[i]) & (phiVals == 45)]])
+			val0 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 0) & dValsValid],
+				dErrVals[(psiVals == psiUni[i]) & (phiVals == 0) & dValsValid]])
+			val90 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 90) & dValsValid],
+				dErrVals[(psiVals == psiUni[i]) & (phiVals == 90) & dValsValid]])
+			val180 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 180) & dValsValid],
+				dErrVals[(psiVals == psiUni[i]) & (phiVals == 180) & dValsValid]])
+			val270 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 270) & dValsValid],
+				dErrVals[(psiVals == psiUni[i]) & (phiVals == 270) & dValsValid]])
+		val45 = np.array([dVals[(psiVals == psiUni[i]) & (phiVals == 45) & dValsValid],
+			dErrVals[(psiVals == psiUni[i]) & (phiVals == 45) & dValsValid]])
 		if val45.size > 0:
 			vals45[i, :] = val45
 		if val0.size > 0 and val180.size > 0:
@@ -297,6 +303,7 @@ def sin2PsiAnalysis(data, maxPsi=None):
 			vals90_270[i, 2] = val270[1]
 		if vals0_180[i, 0] != 0 and vals90_270[i, 0] != 0:
 			valsAll[i, :] = 0.5 * (vals0_180[i, [0, 2]] + vals90_270[i, [0, 2]])
+	# check for validity
 	# perform linear regression for all phi values
 	usedIndex = np.array(range(len(psiUni)))
 	used = usedIndex[valsAll[:, 0] != 0]
@@ -729,6 +736,27 @@ def multiUniversalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15,
 	resDataS33 = {'tauMean': tauS33, 'dStar100': aStarVals, 'dStar100Err': aStarErrVals, 's33': s33,
 		'dev_s33': dev_s33, 'hklList': hklList}
 	return resData, resDataS33
+
+
+def initStressAnalysisSettings(*args):
+	# default values
+	settings = {"method": "ED", "showPlots": True, "showDeviation": False, "anode": "", "material": "Fe", "a0Val": 0.28665,
+		"decList": np.array([]), "maxPsi": 45}  # 'ED', 'AD'
+	if len(args) % 2 == 0:
+		# set specified values
+		for i in range(0, len(args), 2):
+			if bf.hasKey(settings, args[i]):  # adding new entries is currently not allowed
+				settings[args[i]] = args[i + 1]
+	elif len(args) == 1:
+		# file with settings is specified
+		lines = fg.readLines(args[0])
+		for line in lines:
+			lineData = line.split('\t')
+			if lineData[1].startswith('['):
+				settings[lineData[0]] = bf.strArray2npArray(lineData[1])
+			else:
+				settings[lineData[0]] = eval(lineData[1])
+	return settings
 
 
 # par contains the factors of polynom a0, a1, ... an, b
