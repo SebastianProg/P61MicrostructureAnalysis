@@ -36,7 +36,7 @@ def initPeakfitSettings(*args):
 	return settings
 
 
-def estimate_peak_params(xx, yy, test_ind=5):
+def estimate_peak_params(xx, yy, test_ind=5, consider_background=True):
 	# test_ind defines distance to maximum value to estimate sigma parameter
 	max_ind = np.argmax(yy)
 	max_pos = xx[max_ind]
@@ -47,13 +47,35 @@ def estimate_peak_params(xx, yy, test_ind=5):
 		l_sigma = np.abs(xx[max_ind - test_ind] - xx[max_ind]) / (
 				2 * (np.log(max_val) - np.log(yy[max_ind - test_ind]))) ** 0.5
 		est_sigma = l_sigma
+		l_used = (xx > max_pos - 3.1 * l_sigma) & (xx < max_pos - 2.9 * l_sigma)
+		if np.any(l_used):
+			x_used = xx[l_used]
+			lx = x_used[int(len(x_used) / 2)]
+			l_val = np.mean(yy[l_used])
+		else:
+			lx = xx[int(test_ind / 2)]
+			l_val = np.mean(yy[0:test_ind])
 	if max_ind < len(xx):
 		r_sigma = np.abs(xx[max_ind + test_ind] - xx[max_ind]) / (
 					2 * (np.log(max_val) - np.log(yy[max_ind + test_ind]))) ** 0.5
 		est_sigma = r_sigma
+		r_used = (xx > max_pos + 2.9 * r_sigma) & (xx < max_pos + 3.1 * r_sigma)
+		if np.any(r_used):
+			x_used = xx[r_used]
+			rx = x_used[int(len(x_used) / 2)]
+			r_val = np.mean(yy[r_used])
+		else:
+			rx = xx[len(xx) - 1 - int(test_ind / 2)]
+			r_val = np.mean(yy[-test_ind - 1:-1])
 	if l_sigma > 0 and r_sigma > 0:
 		est_sigma = np.mean([l_sigma, r_sigma])
-	return max_val, max_pos, est_sigma
+	if consider_background:
+		m_val = (r_val - l_val) / (rx - lx)
+		b_val = np.mean([l_val - m_val * lx, r_val - m_val * rx])
+		max_val, max_pos, est_sigma = estimate_peak_params(xx, yy - (m_val * xx + b_val), test_ind, False)
+		return max_val, max_pos, est_sigma, m_val, b_val
+	else:
+		return max_val, max_pos, est_sigma
 
 
 def evalPeakData(settings, peakData, n=1):

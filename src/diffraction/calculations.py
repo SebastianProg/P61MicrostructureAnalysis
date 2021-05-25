@@ -524,6 +524,8 @@ def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNorma
 	s1Val = data['s1Val']
 	hs2Val = data['hs2Val']
 	phi4 = data['phi4']
+	dValsValid = (dVals > 0) & (np.isnan(dVals) == False)
+	tauValsValid = (tauVals >= 0) & (tauVals < 1e6)
 	# define needed variables
 	sinpsi2Star = -2 * s1Val / hs2Val
 	psiStar = bc.asind(sinpsi2Star ** 0.5)
@@ -539,15 +541,15 @@ def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNorma
 	validCounter = 0
 	for i in range(len(psiUni)):
 		if phi4:
-			cond0 = (psiVals == psiUni[i]) & (phiVals == 0)
-			cond90 = (psiVals == psiUni[i]) & (phiVals == 90)
-			cond180 = (psiVals == psiUni[i]) & (phiVals == 180)
-			cond270 = (psiVals == psiUni[i]) & (phiVals == 270)
+			cond0 = (psiVals == psiUni[i]) & (phiVals == 0) & dValsValid
+			cond90 = (psiVals == psiUni[i]) & (phiVals == 90) & dValsValid
+			cond180 = (psiVals == psiUni[i]) & (phiVals == 180) & dValsValid
+			cond270 = (psiVals == psiUni[i]) & (phiVals == 270) & dValsValid
 		else:
-			cond0 = (psiVals == psiUni[i]) & (phiVals == 0)
-			cond90 = (psiVals == psiUni[i]) & (phiVals == 90)
-			cond180 = (psiVals == -psiUni[i]) & (phiVals == 0)
-			cond270 = (psiVals == -psiUni[i]) & (phiVals == 90)
+			cond0 = (psiVals == psiUni[i]) & (phiVals == 0) & dValsValid
+			cond90 = (psiVals == psiUni[i]) & (phiVals == 90) & dValsValid
+			cond180 = (psiVals == -psiUni[i]) & (phiVals == 0) & dValsValid
+			cond270 = (psiVals == -psiUni[i]) & (phiVals == 90) & dValsValid
 		val0 = np.concatenate((dVals[cond0], dVals[cond0] - dErrVals[cond0],
 			dVals[cond0] + dErrVals[cond0]))
 		val90 = np.concatenate((dVals[cond90], dVals[cond90] - dErrVals[cond90],
@@ -562,7 +564,7 @@ def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNorma
 			f13[i, :] = val0 - val180
 			f23[i, :] = val90 - val270
 			valsAll[i, :] = 0.25 * fplus[i, :]
-			tauRes[i] = np.mean(tauVals[psiVals == psiUni[i]])
+			tauRes[i] = np.mean(tauVals[(psiVals == psiUni[i]) & tauValsValid])
 			validCounter += 1
 	# perform linear regression for all phi values to get dstar
 	used = valsAll[:, 0] != 0
@@ -628,11 +630,11 @@ def universalPlotAnalysis(data, maxPsi=None, minDistPsiStar=0.15, minValPsiNorma
 		errVals[used, 2] = np.abs(f13[used, 2] - f13[used, 1]) / 2
 		errVals[used, 3] = np.abs(f23[used, 2] - f23[used, 1]) / 2
 		# also determine s33
-		minVal, minPos = bf.min(abs(psiVals - psiStar))
+		minVal, minPos = bf.min(abs(psiVals[tauValsValid] - psiStar))
 		tauS33 = np.mean(tauVals[minPos])  # tau equivalent to condition at psiStar
-		#leftVal, leftPos = bf.max(psiVals[psiVals < psiStar])
-		#rightVal, rightPos = bf.min(psiVals[psiVals > psiStar])
-		#tauS33 = np.interp(psiStar, [leftVal, rightVal], [tauVals[leftPos], tauVals[rightPos]])
+		# leftVal, leftPos = bf.max(psiVals[psiVals < psiStar])
+		# rightVal, rightPos = bf.min(psiVals[psiVals > psiStar])
+		# tauS33 = np.interp(psiStar, [leftVal, rightVal], [tauVals[leftPos], tauVals[rightPos]])
 		aStarVal = conv.latticeDists2aVals2(dStarVal, hklVal)
 		if a0Val is None or a0Val == 0:
 			s33 = 0
