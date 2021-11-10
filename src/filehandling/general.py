@@ -9,10 +9,13 @@ import tkinter
 from tkinter import filedialog
 import numpy as np
 import os
+import sys
 import errno
-import nexusformat.nexus as nxs
 
 import basics.functions as bf
+
+
+CUR_FOLDER = os.getcwd()  # this is the folder used as initial for file and folder dialogs
 
 
 def fileparts(fullFile):
@@ -21,8 +24,14 @@ def fileparts(fullFile):
 
 
 def fileparts2(fullFile):
-    filePath, ext = os.path.splitext(fullFile)
-    return filePath, ext
+	filePath, ext = os.path.splitext(fullFile)
+	return filePath, ext
+
+
+def fileparts3(fullFile):
+	filePath, ext = os.path.splitext(fullFile)
+	pathName, file = os.path.split(filePath)
+	return pathName, file, ext
 
 
 # check if file or path exists
@@ -40,8 +49,11 @@ def existsDir(dir):
 	return os.path.isdir(dir)
 
 
-# Request files by user selection
-def requestFiles(fileType=(("All files", "*.*"),), dialogTitle="", multiselect="on", folder="/"):
+# request files by user selection
+def requestFiles(fileType=(("All files", "*.*"),), dialogTitle="", multiselect="on", folder=None):
+	global CUR_FOLDER
+	if folder is None:
+		folder = CUR_FOLDER
 	if len(dialogTitle) == 0:
 		if multiselect == "on":
 			dialogTitle = "Select files"
@@ -52,13 +64,17 @@ def requestFiles(fileType=(("All files", "*.*"),), dialogTitle="", multiselect="
 	root.wm_attributes('-topmost', True)  # show dialog in front of all
 	root.withdraw()
 	if multiselect == "on":
-		return filedialog.askopenfilenames(initialdir=folder, title=dialogTitle, filetypes=fileType, parent=root)
+		files = filedialog.askopenfilenames(initialdir=folder, title=dialogTitle, filetypes=fileType, parent=root)
 	else:
 		# put single file into tuple
-		return (filedialog.askopenfilename(initialdir=folder, title=dialogTitle, filetypes=fileType, parent=root),)
+		files = (filedialog.askopenfilename(initialdir=folder, title=dialogTitle, filetypes=fileType, parent=root),)
+	# get path of first selected file to set as new working directory
+	if len(files) > 0 and len(files[0]) > 0:
+		CUR_FOLDER, file = fileparts(files[0])
+	return files
 
 
-def requestFiles2(fileType=(("All files", "*.*"),), dialogTitle="", multiselect="on", folder="/"):
+def requestFiles2(fileType=(("All files", "*.*"),), dialogTitle="", multiselect="on", folder=None):
 	files = requestFiles(fileType, dialogTitle, multiselect, folder)
 	fileNames = list(files)
 	for i in range(len(files)):
@@ -67,17 +83,31 @@ def requestFiles2(fileType=(("All files", "*.*"),), dialogTitle="", multiselect=
 	return fileNames, pathName
 
 
-def requestSaveFile(fileType=(("All files", "*.*"),), dialogTitle="", folder="/"):
+def requestSaveFile(fileType=(("All files", "*.*"),), dialogTitle="", folder=None):
+	global CUR_FOLDER
+	if folder is None:
+		folder = CUR_FOLDER
 	if len(dialogTitle) == 0:
 		dialogTitle = "Select file to save"
 	# request file(s)
 	root = tkinter.Tk()
 	root.withdraw()
-	return filedialog.asksaveasfilename(initialdir=folder, title=dialogTitle, filetypes=fileType)
+	file = filedialog.asksaveasfilename(initialdir=folder, title=dialogTitle, filetypes=fileType)
+	# get path of specified file to set as new working directory
+	if len(file) > 0:
+		CUR_FOLDER, _ = fileparts(file)
+	return file
 
 
-def requestDirectory(parentWindow=None, dialogTitle="Select a folder:", folder=os.getcwd()):
-	return filedialog.askdirectory(parent=parentWindow, initialdir=folder, title=dialogTitle)
+def requestDirectory(parentWindow=None, dialogTitle="Select a folder:", folder=None):
+	global CUR_FOLDER
+	if folder is None:
+		folder = CUR_FOLDER
+	pathName = filedialog.askdirectory(parent=parentWindow, initialdir=folder, title=dialogTitle)
+	# set selected path as new working directory
+	if len(pathName) > 0:
+		CUR_FOLDER = pathName
+	return pathName
 
 
 def openFile(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
@@ -109,7 +139,7 @@ def dlmread(file, delim="\t", skipRows=0, usedCols=None, maxRows=None, commentSt
 		usecols=usedCols, max_rows=maxRows)
 
 
-def dlmwrite(file, data, delim="\t", newln=bf.newlineChar(), head="", foot="", commentStr="", append="off", format="%.18e"):
+def dlmwrite(file, data, delim="\t", newln=bf.newlineChar(), head="", foot="", commentStr="", append="off", format="%.5g"):
 	if append == "on":
 		fid = open(file, 'ab')
 		np.savetxt(fid, data, fmt=format, delimiter=delim, newline=newln, header=head, footer=foot, comments=commentStr)
@@ -173,10 +203,3 @@ def saveSettings(settingsDict, fileName=None):
 		writeLine(fid, item[0] + '\t' + parstr)
 	fid.close()
 	return fileName
-
-
-def readnxs(filename, show=False):
-	nxsdata = nxs.nxload(filename)
-	if show:
-		print(nxsdata.tree)
-	return nxsdata

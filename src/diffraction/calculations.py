@@ -76,7 +76,25 @@ def calcTauAlphaBeta(mu, alpha, beta):
 
 
 def calcSigma33(d, d0, s1, hs2):
-	return (d / d0 - 1) / (hs2 + 3 * s1)
+	return conv.dVals2strains(d, d0) / (hs2 + 3 * s1)
+
+
+def calcSigma33_2(d, d0, dec):
+	return calcSigma33(d, d0, dec[:, 1], dec[:, 2])
+
+
+def calcSigmaHook(s1, hs2, eps11, eps22, eps33, deltaHook, epsij):
+	# based on Behzad
+	# set deltaHook to 1
+	# epsij = eps11 is the value where stresses are calculated
+	# e. g. sig_hook_90 --> eps11 is strain value at alpha = 90°
+	# eps22 is the value of perpendicual direction
+	# eps33 is always 0
+	return (1 / hs2) * (epsij - (deltaHook * (s1 / (hs2 + (3 * s1))) * (eps11 + eps22 + eps33)))
+
+
+def calcSigmaHook2(dec, eps11, eps22, eps33, deltaHook, epsij):
+	return calcSigmaHook(dec[:, 1], dec[:, 2], eps11, eps22, eps33, deltaHook, epsij)
 
 
 def calcMue(energy, material):
@@ -100,7 +118,7 @@ def calcMue(energy, material):
 			mue[energy >= 8.3328] = 929809 * energy[energy >= 8.3328] ** -2.708 / 10000 # in um
 		else:
 			mue = 10 ** 6
-	if bf.size(mue,0) < bf.size(mue,1):
+	if bf.size(mue, 0) < bf.size(mue, 1):
 		mue = np.transpose(mue)
 	return mue
 

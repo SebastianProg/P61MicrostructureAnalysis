@@ -47,77 +47,88 @@ class P61ANexusReader:
         else:
             result = pd.DataFrame(columns=self.columns)
 
-        with h5py.File(f_name, 'r') as f:
-            for ii, channel in enumerate((self.ch0, self.ch1)):
-                if '/'.join(channel + self.hist) not in f:
-                    continue
+        try:
+            with h5py.File(f_name, 'r') as f:
+                for ii, channel in enumerate((self.ch0, self.ch1)):
+                    if '/'.join(channel + self.hist) not in f:
+                        continue
 
-                frames = np.sum(f['/'.join(channel + self.hist)], axis=0)
-                frames[:20] = 0.0
-                frames[-1] = 0.0
-                # calculation of energies
-                # kev = (np.arange(frames.shape[0]) + 0.5) * kev_per_bin
-                ch_vals = np.arange(frames.shape[0]) + 1
-                kev = self.calib[ii, 0] * ch_vals ** 2 + self.calib[ii, 1] * ch_vals + self.calib[ii, 2]
+                    frames = np.sum(f['/'.join(channel + self.hist)], axis=0)
+                    frames[:20] = 0.0
+                    frames[-1] = 0.0
+                    # calculation of energies
+                    # kev = np.arange(frames.shape[0]) * kev_per_bin
+                    # if ii == 0:
+                    #     kev = np.arange(frames.shape[0]) * 0.050494483569344 + 0.029899315869827
+                    # elif ii == 1:
+                    #     kev = np.arange(frames.shape[0]) * 0.04995786201326 + 0.106286326963684
+                    # else:
+                    #     kev = (np.arange(frames.shape[0]) + 0.5) * kev_per_bin
+                    ch_vals = np.arange(frames.shape[0]) + 1
+                    kev = self.calib[ii, 0] * ch_vals ** 2 + self.calib[ii, 1] * ch_vals + self.calib[ii, 2]
 
-                if self.q_app is not None:
-                    row = {c: None for c in self.q_app.data.columns}
-                else:
-                    row = {c: None for c in self.columns}
+                    if self.q_app is not None:
+                        row = {c: None for c in self.q_app.data.columns}
+                    else:
+                        row = {c: None for c in self.columns}
 
-                # if ('/'.join(channel + self.all_event) in f) and ('/'.join(channel + self.all_good) in f):
-                #     allevent = np.sum(f['/'.join(channel + self.all_event)], axis=0)
-                #     allgood = np.sum(f['/'.join(channel + self.all_good)], axis=0)
-                #     row.update({'DeadTime': (1. - allgood / allevent) * 100})
+                    # if ('/'.join(channel + self.all_event) in f) and ('/'.join(channel + self.all_good) in f):
+                    #     allevent = np.sum(f['/'.join(channel + self.all_event)], axis=0)
+                    #     allgood = np.sum(f['/'.join(channel + self.all_good)], axis=0)
+                    #     row.update({'DeadTime': (1. - allgood / allevent) * 100})
 
-                count_time = np.sum(f['/'.join(channel + self.time)], axis=0) * 1.25e-8
-                resetticks = np.sum(f['/'.join(channel + self.reset_ticks)], axis=0)
-                dt_x = resetticks / count_time
+                    count_time = np.sum(f['/'.join(channel + self.time)], axis=0) * 1.25e-8
+                    resetticks = np.sum(f['/'.join(channel + self.reset_ticks)], axis=0)
+                    dt_x = resetticks / count_time
 
-                row.update({
-                    'DataX': kev,
-                    'DataY': frames,
-                    'DataID': f_name + ':' + '/'.join(channel),
-                    'Channel': ii,
-                    'ScreenName': os.path.basename(f_name) + ':' + '%02d' % ii,
-                    'Active': True,
-                    'CountTime': count_time,
-                    'DeadTime': self.dtcalib[ii, 0] * dt_x ** 2 + self.dtcalib[ii, 1] * dt_x + self.dtcalib[ii, 2]
-                })
+                    row.update({
+                        'DataX': kev,
+                        'DataY': frames,
+                        'DataID': f_name + ':' + '/'.join(channel),
+                        'Channel': ii,
+                        'ScreenName': os.path.basename(f_name) + ':' + '%02d' % ii,
+                        'Active': True,
+                        'CountTime': count_time,
+                        'DeadTime': self.dtcalib[ii, 0] * dt_x ** 2 + self.dtcalib[ii, 1] * dt_x + self.dtcalib[ii, 2]
+                    })
 
-                if self.q_app is not None:
-                    row.update({'Color': next(self.q_app.params['ColorWheel'])})
-                result.loc[result.shape[0]] = row
+                    if self.q_app is not None:
+                        row.update({'Color': next(self.q_app.params['ColorWheel'])})
+                    result.loc[result.shape[0]] = row
+        except Exception:
+            print('Problem with file: ' + f_name)
+            return False
 
         result = result.astype('object')
         result[pd.isna(result)] = None
         return result
 
+    def main(self):
+        differentOutputFolder = True
+        # differentOutputFolder = False
+        # select nexus files
+        fileNames = gfh.requestFiles((("Nexus files", "*.nxs"),), "Select P61A file", "on")
+        pathName, _ = gfh.fileparts(fileNames[0])
+        # read all data from selected files
+        reader = P61ANexusReader()
+        data = pd.DataFrame(columns=reader.columns)
+        for f_name in fileNames:
+            data = pd.concat((data, reader.read(f_name)), ignore_index=True)
+        # select output folder if wanted
+        if differentOutputFolder:
+            outputPath = gfh.requestDirectory(dialogTitle='Select output folder', folder=pathName)
+        else:
+            outputPath = pathName
+        # export data to spectrum files
+        for i in range(data.shape[0]):
+            curData = data.iloc[i]
+            header = ['SCREEN_NAME=' + curData['ScreenName'], 'CHANNEL=' + str(curData['Channel']),
+                'DEADTIME=' + str(curData['DeadTime']), 'TREAL=' + str(curData['CountTime']),
+                'SPECTRTXT=' + str(len(curData['DataX']))]
+            vals = np.transpose([curData['DataX'], curData['DataY']])
+            sfh.writeSpectrumFile(outputPath + '/' + gf.replace(curData['ScreenName'], '.nxs:', '_') + '.txt', vals,
+                header)
+
 
 if __name__ == '__main__':
-    differentOutputFolder = True
-    # differentOutputFolder = False
-    # select nexus files
-    fileNames = gfh.requestFiles((("Nexus files", "*.nxs"),), "Select P61A file", "on")
-    pathName, _ = gfh.fileparts(fileNames[0])
-    # read all data from selected files
-    reader = P61ANexusReader()
-    data = pd.DataFrame(columns=reader.columns)
-    for f_name in fileNames:
-        data = pd.concat((data, reader.read(f_name)), ignore_index=True)
-    # select output folder if wanted
-    if differentOutputFolder:
-        outputPath = gfh.requestDirectory(dialogTitle='Select output folder', folder=pathName)
-    else:
-        outputPath = pathName
-    # export data to spectrum files
-    for i in range(data.shape[0]):
-        curData = data.iloc[i]
-        header = ['SCREEN_NAME=' + curData['ScreenName'], 'CHANNEL=' + str(curData['Channel']),
-            'DEADTIME=' + str(curData['DeadTime']), 'TREAL=' + str(curData['CountTime']),
-            'SPECTRTXT=' + str(len(curData['DataX']))]
-        vals = np.transpose([curData['DataX'], curData['DataY']])
-        sfh.writeSpectrumFile(outputPath + '/' + gf.replace(curData['ScreenName'], '.nxs:', '_') + '.txt',
-            vals,  header)
-
-
+    P61ANexusReader().main()

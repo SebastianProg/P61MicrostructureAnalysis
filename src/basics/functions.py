@@ -72,9 +72,9 @@ def createRange(start=0, step=0.1, stop=1):
 
 def flat(vals, lines=0):
 	if lines == 0:
-		flatVals = np.reshape(vals, len(vals), 1)
+		flatVals = np.reshape(vals, lenArray(vals))
 	else:
-		flatVals = np.reshape(vals, 1, len(vals))
+		flatVals = np.reshape(vals, (1, lenArray(vals)))
 	return flatVals
 
 
@@ -98,6 +98,33 @@ def meshdata(xvals, yvals, zvals, cvals=None, mvals=None):
 			return xout, yout, zout, cout
 		else:
 			return xout, yout, zout, mout
+
+
+def vectordata(m, xm=None, ym=None, sel=None, ind=False):
+	if xm is None:
+		if ind:
+			xx = np.arange(m.shape[0])
+		else:
+			xx = np.arange(1, m.shape[0] + 1)
+		xm = np.array(np.transpose(np.mat(xx)) * np.mat(np.ones(m.shape[1])))
+	if ym is None:
+		if ind:
+			yy = np.arange(m.shape[1])
+		else:
+			yy = np.arange(1, m.shape[1] + 1)
+		ym = np.array(np.transpose(np.mat(np.ones(m.shape[0]))) * np.mat(yy))
+	if sel is not None:
+		# use only selected values
+		xm = xm[sel]
+		ym = ym[sel]
+		m = m[sel]
+	# create result values
+	return flat(xm), flat(ym), flat(m)
+
+
+def vectordata2(m, xm=None, ym=None, sel=None, ind=False):
+	xout, yout, zout = vectordata(m, xm, ym, sel, ind)
+	return np.array([xout, yout, zout])
 
 
 def strrepAll(origStr, oldSubstr, newSubstr):

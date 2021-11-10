@@ -1,23 +1,19 @@
 import numpy as np
-import itertools
 
+from P61ANexusReader import P61ANexusReader
 import basics.functions as bf
 import filehandling.general as fg
 import filehandling.specific as fs
 
 
-# Fio file processing for ROI analysis
-fileNames = fg.requestFiles((("Fio files", '*.fio'),), 'Select motor positions files', 'on')
-for i in range(len(fileNames)):
-    fioData = fs.read_fio(fileNames[i])
-    fg.dlmwrite(bf.replace(fileNames[i], '.fio', '_roi.txt'), fioData.values,
-        head=bf.stringList2string(list(fioData.columns), '\t'), format='%f')
+# Nexus file conversion
+P61ANexusReader().main()
 
+# Standard conversion of fio files
 # header for position files: om eta tth0 tth1 psi0 psi1 phi x y z petracurrent
 header = ['om', 'eta', 'tth0', 'tth1', 'psi0', 'psi1', 'phi', 'x', 'y', 'z', 'petraCur']
 headLine = bf.stringList2string(header, '\t')
-
-# Fio file processing for residual stress analysis and texture analysis
+# Fio file processing for residual stress analysis or texture analysis
 # phioffset = 45
 phioffset = 0
 fileNames = fg.requestFiles((("Fio files", '*.fio'),), 'Select motor positions files', 'on')
@@ -29,6 +25,10 @@ for i in range(len(fileNames)):
         motVals[:, 0] = fixData['eu.omg']
     if 'eu.eta' in fixData.keys():
         motVals[:, 1] = fixData['eu.eta']
+    if 'eu.alp' in fixData.keys():
+        motVals[:, 0] = fixData['eu.alp']
+    if 'eu.bet' in fixData.keys():
+        motVals[:, 1] = fixData['eu.bet']
     if 'eu.chi' in fixData.keys():
         motVals[:, 4] = -90 + fixData['eu.chi']
         motVals[:, 5] = fixData['eu.chi']
@@ -43,16 +43,22 @@ for i in range(len(fileNames)):
     if 'petracurrent' in fixData.keys():
         motVals[:, 10] = fixData['petracurrent']
     # set user determined values -> tth values
-    # motVals[:, 2] = 15
-    # motVals[:, 3] = 6.785
-    motVals[:, 2] = 9.72
-    motVals[:, 3] = 10.23
-    # motVals[:, 3] = 6.225
+    # motVals[:, 2] = 15  # detector 0
+    # motVals[:, 3] = 6.785  # detector 1
+    # motVals[:, 2] = 9.72  # detector 0
+    # motVals[:, 3] = 10.23  # detector 1
+    # motVals[:, 3] = 6.225  # detector 1
+    motVals[:, 2] = 8.14  # detector 0
+    motVals[:, 3] = 5.1  # detector 1
     # set variable values
     if 'eu.omg' in scanData.columns:
         motVals[:, 0] = np.array(scanData['eu.omg'])
     if 'eu.eta' in scanData.columns:
         motVals[:, 1] = np.array(scanData['eu.eta'])
+    if 'eu.alp' in scanData.columns:
+        motVals[:, 0] = np.array(scanData['eu.alp'])
+    if 'eu.bet' in scanData.columns:
+        motVals[:, 1] = np.array(scanData['eu.bet'])
     if 'eu.chi' in scanData.columns:
         motVals[:, 4] = -90 + np.array(scanData['eu.chi'])
         motVals[:, 5] = np.array(scanData['eu.chi'])
@@ -68,37 +74,3 @@ for i in range(len(fileNames)):
         motVals[:, 10] = np.array(scanData['petracurrent'])
     # export new text file
     fg.dlmwrite(bf.replace(fileNames[i], '.fio', '.txt'), motVals, head=headLine, format='%f')
-
-# split motor positions files into separate ones according to one axis (e. g. different measurement points)
-# splitCol = 2  # tth0
-# splitCol = 3  # tth1
-splitCol = 7  # x
-# splitCol = 8  # y
-# splitCol = 9  # z
-fileNames = fg.requestFiles((("Text files", '*.txt'),), 'Select positions files', 'on')
-for curFile in fileNames:
-    motposData = fg.dlmread(curFile, '\t', 1)
-    uniVals = np.unique(motposData[:, splitCol])
-    for val in uniVals:
-        fg.dlmwrite(bf.replace(curFile, '.txt', '_' + header[splitCol] + '_' + str(val) + '.txt'),
-            motposData[motposData[:, splitCol] == val, :], head=headLine, format='%f')
-
-# split motor positions files into separate ones according to three axis (e. g. different measurement points)
-splitCol1 = 7  # x
-splitCol2 = 8  # y
-splitCol3 = 9  # z
-fileNames = fg.requestFiles((("Text files", '*.txt'),), 'Select positions files', 'on')
-for curFile in fileNames:
-    motposData = fg.dlmread(curFile, '\t', 1)
-    uniVals1 = np.unique(motposData[:, splitCol1])
-    uniVals2 = np.unique(motposData[:, splitCol2])
-    uniVals3 = np.unique(motposData[:, splitCol3])
-    for val1 in uniVals1:
-        str1 = '_' + header[splitCol1] + '_' + str(val1)
-        for val2 in uniVals2:
-            str2 = '_' + header[splitCol2] + '_' + str(val2)
-            for val3 in uniVals3:
-                str3 = '_' + header[splitCol3] + '_' + str(val3)
-                fg.dlmwrite(bf.replace(curFile, '.txt', str1 + str2 + str3 + '.txt'),
-                    motposData[(motposData[:, splitCol1] == val1) & (motposData[:, splitCol2] == val2) &
-                               (motposData[:, splitCol3] == val3), :], head=headLine, format='%f')
